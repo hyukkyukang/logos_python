@@ -39,7 +39,7 @@ jobs:
       # Runs a set of commands using the runners shell
       - name: Run unittest
         working-directory: ${{ env.working-directory }}
-        run: python -m xmlrunner tests/koutrika_et_al_2010/*
+        run: python -m xmlrunner tests/test_koutrika_et_al_2010/*
         
       - name: Report authors method unittest results
         uses: dorny/test-reporter@v1.5.0
