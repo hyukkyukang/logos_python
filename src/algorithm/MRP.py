@@ -64,13 +64,14 @@ class MRP():
 
     def _call(self, current_node, rp, parent_node, query_graph, opened=[], cStr=""):
         def has_path(src: Node, dst: Node) -> bool:
-            return src is not None and src != dst  and nx.has_path(query_graph, src, dst)
+            return src is not None and src != dst and nx.has_path(query_graph, src, dst)
         def has_incoming_edge(node: Node) -> bool:
             return any([type(query_graph.edges[src, dst]['data']) == Membership for src, dst in query_graph.in_edges(node)])
         def is_forward(node1: Node, node2: Node) -> bool:
             # TODO: Need to implement this
             """Return whether the edge of node1 to node2 is a forward edge"""
-            return None
+            assert nx.has_path(query_graph, node1, node2) or nx.has_path(query_graph, node2, node1)
+            return nx.has_path(query_graph, node1, node2)
         def is_edge_to_mute(node1: Node, node2: Node) -> bool:
             # TODO: Need to implement this. (All edge should have pre-defined attribute describing whether it is to be muted or not)
             """Return whether the edge is to be muted"""
@@ -118,7 +119,7 @@ class MRP():
                         # label_mv should change is visited nodes
                         s_tmp = self.label_v(query_graph, dst_node)
                         if s_tmp:
-                            cStr += s_tmp
+                            cStr += f" whose {s_tmp}"
                 else:
                     raise NotImplementedError("Need to check what to do in this case")
 
