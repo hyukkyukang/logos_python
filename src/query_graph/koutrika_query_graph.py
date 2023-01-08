@@ -210,7 +210,7 @@ class Query_graph(nx.DiGraph):
     def __init__(self, name="", rp_dist_threshold=4):
         super().__init__()
         self.name = name
-        self._query_subject = None
+        self._query_subjects = None
         self.reference_point_distance_threshold = rp_dist_threshold
 
     @property
@@ -314,7 +314,9 @@ class Query_graph(nx.DiGraph):
         return list(filter(lambda n: type(n) == Relation, self.nodes))
 
     @property
-    def query_subject(self):
+    def query_subjects(self):
+        """primary relations that has the mininum distance to its farthest relations. (When more than one is found, we return those with the most number of projecting attributes)
+        """
         def get_shortest_distance(src_node, dst_node):
             return nx.shortest_path_length(self, src_node, dst_node)
         def get_max_distance_with_other_relations(src_relation):
@@ -331,7 +333,7 @@ class Query_graph(nx.DiGraph):
         # Final candidate relations for query subjects
         query_subjects = list(filter(lambda r: self._get_number_of_projecting_attributes(r) == max_projecting_attributes, tied_primary_releations))
         # Randomly return one relation from possible candidates
-        return query_subjects[0]
+        return query_subjects
 
     def _get_number_of_projecting_attributes(self, relation):
         assert type(relation) == Relation

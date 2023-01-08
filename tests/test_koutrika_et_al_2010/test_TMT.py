@@ -28,7 +28,7 @@ class Test_TMT(unittest.TestCase):
         query = GroupBy_query()
         query_graph = query.simplified_graph
         query_graph.draw()
-        composed_nl = self.algorithm(query_graph.query_subject, query_graph).lower()
+        composed_nl = self.algorithm(query_graph.query_subjects[0], query_graph).lower()
         print(f"Composed NL: {composed_nl}")
         self.assertTrue(composed_nl)
 
@@ -36,7 +36,7 @@ class Test_TMT(unittest.TestCase):
         query = Nested_query()
         query_graph = query.simplified_graph
         query_graph.draw()
-        composed_nl = self.algorithm(query_graph.query_subject, query_graph).lower()
+        composed_nl = self.algorithm(query_graph.query_subjects[0], query_graph).lower()
         print(f"Composed NL: {composed_nl}")
         self.assertTrue(composed_nl)
 

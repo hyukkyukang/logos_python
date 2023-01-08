@@ -1,8 +1,13 @@
+import re
 import abc
 import networkx as nx
 from src.query_graph.koutrika_query_graph import Query_graph, Relation, Attribute, Value, Function, FunctionType, OperatorType
 from src.template.kourtrika_template import Generic_template, Template
 
+def compare_string_without_newline(str1, str2):
+    str1 = re.sub(' +', ' ', str1)
+    str2= re.sub(' +', ' ', str2)
+    return str1.replace("\n", "") == str2.replace("\n", "")
 
 def query_graph_to_generic_templates(query_graph):
     """
@@ -285,11 +290,13 @@ class GroupBy_query(Query):
     def graph(self):
         if not GroupBy_query._graph:
             # Relation
-            studentHistory = Relation("StudentHistory")
-            
+            studentHistory = Relation("StudentHistory", "student history")
+
             # Attribute
-            year = Attribute("year")
-            term = Attribute("term")
+            year_prj = Attribute("year")
+            year_grp = Attribute("year")
+            term_prj = Attribute("term")
+            term_grp = Attribute("term")
             grade1 = Attribute("grade")
             grade2 = Attribute("grade")
             avg = Function(FunctionType.Avg)
@@ -299,10 +306,10 @@ class GroupBy_query(Query):
             query_graph = Query_graph("group-by query")
             query_graph.connect_membership(studentHistory, grade1)
             query_graph.connect_transformation(max, grade1)
-            query_graph.connect_grouping(studentHistory, year)
-            query_graph.connect_grouping(year, term)
-            query_graph.connect_membership(studentHistory, year)
-            query_graph.connect_membership(studentHistory, term)
+            query_graph.connect_grouping(studentHistory, year_grp)
+            query_graph.connect_grouping(year_grp, term_grp)
+            query_graph.connect_membership(studentHistory, year_prj)
+            query_graph.connect_membership(studentHistory, term_prj)
             query_graph.connect_having(studentHistory, grade2)
             query_graph.connect_transformation(grade2, avg)
             query_graph.connect_predicate(avg, v_3)
@@ -317,10 +324,12 @@ class GroupBy_query(Query):
             studentHistory = Relation("StudentHistory", "student history")
             
             # Attribute
-            year = Attribute("year", "year")
-            term = Attribute("term", "term")
-            grade1 = Attribute("grade", "grade")
-            grade2 = Attribute("grade", "grade")
+            year_prj = Attribute("year_p", "year")
+            year_grp = Attribute("year_g", "year")
+            term_prj = Attribute("term_p", "term")
+            term_grp = Attribute("term_g", "term")
+            grade1 = Attribute("grade_p", "grade")
+            grade2 = Attribute("grade_h", "grade")
             avg = Function(FunctionType.Avg)
             max = Function(FunctionType.Max)
             v_3 = Value("3")
@@ -328,13 +337,13 @@ class GroupBy_query(Query):
             query_graph = Query_graph("group-by query")
             query_graph.connect_membership(studentHistory, grade1)
             query_graph.connect_transformation(max, grade1)
-            query_graph.connect_grouping(studentHistory, year)
-            query_graph.connect_grouping(year, term)
-            query_graph.connect_membership(studentHistory, year)
-            query_graph.connect_membership(studentHistory, term)
+            query_graph.connect_grouping(studentHistory, year_grp)
+            query_graph.connect_grouping(year_grp, term_grp)
+            query_graph.connect_membership(studentHistory, year_prj)
+            query_graph.connect_membership(studentHistory, term_prj)
             query_graph.connect_having(studentHistory, grade2)
             query_graph.connect_transformation(grade2, avg)
-            query_graph.connect_predicate(avg, v_3)
+            query_graph.connect_predicate(avg, v_3, OperatorType.Greaterthan)
             GroupBy_query._graph = query_graph
         return GroupBy_query._graph
     
@@ -542,19 +551,19 @@ class SPJ_query(Query):
     @property
     def BST_nl(self) -> str:
         return """
-            Find the title of courses, the name of instructors, the gpa and name of students, and the description
-            of comments for courses that are taught by instructors, are taken by students that gave comments, 
-            and are offered by departments. Return results only for courses whose term is spring, students whose class is 2011, 
-            comments whose rating is greater than 3, and departments whose name is CS
+            Find the titles of course, the names and gpas of student, the descriptions of comments, and the names of instructor, for course taken by , 
+            for associated with student, for student gave comments, for course are offered department and are taught by, 
+            and for teach instructor. Consider only student whose class is 2011, 
+            comments whose rating is greater than 3, department whose name is cs, and whose term is spring.
             """
 
     @property
     def MRP_nl(self) -> str:
         return """
-            Find the title of courses for courses that are offered by departments whose name is CS, and also,
-            the gpa and name of students for students whose class is 2011 and that have taken these courses,
-            and also, the description of comments for comments whose rating is greater than 3 and that are
-            given by these students, and also, the name of instructors that teach courses whose term is spring.
+            Find the names of course and the names of instructor associated with whose term is spring, 
+            for associated with these course, for course are offered department whose name is cs, 
+            also the names and gpas of student whose class is 2011 for student have taken, for associated with these course, 
+            and also the descriptions of comments whose rating is greater than 3 for comments associated with these student.
             """
 
     @property

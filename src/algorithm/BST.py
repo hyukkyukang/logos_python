@@ -25,6 +25,7 @@ def modify_label(item, value):
 
 class BST():
     """
+    Binary Search Tree Algorithm
         Input:
             - v: node (query subject)
             - g: graph (query graph)
@@ -51,6 +52,12 @@ class BST():
 
         # Add description for join conditions
         if (v not in g.secondary_relations): fStr += f" {label(v)}"
+
+        # Add description for groupby clause
+        
+        # Add description for projection 
+        
+        # Add description for selection
 
         # Check two-hop nodes and add description for from and where conditions
         for src, edge, dst in g.get_one_hop_path_of(v):

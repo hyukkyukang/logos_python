@@ -13,8 +13,8 @@ class Test_MRP(unittest.TestCase):
         gold = query.MRP_nl.lower()
         query_graph.draw()
         #TODO: need to give reference point and parent node for the initial call
-        reference_point, parent_node = None, query_graph.query_subject
-        composed_nl = self.algorithm(query_graph.query_subject, reference_point, parent_node, query_graph).lower()
+        reference_point, parent_node = None, query_graph.query_subjects[0]
+        composed_nl = self.algorithm(query_graph.query_subjects[0], reference_point, parent_node, query_graph).lower()
         self.assertTrue(gold == composed_nl, f"MRP: Incorrect translation of {test_name} query!\nGOLD:{gold}\nResult:{composed_nl}")
 
     def test_spj(self):
@@ -24,8 +24,8 @@ class Test_MRP(unittest.TestCase):
         query = GroupBy_query()
         query_graph = query.simplified_graph
         query_graph.draw()
-        reference_point, parent_node = None, query_graph.query_subject
-        composed_nl = self.algorithm(query_graph.query_subject, reference_point, parent_node, query_graph).lower()
+        reference_point, parent_node = None, query_graph.query_subjects[0]
+        composed_nl = self.algorithm(query_graph.query_subjects[0], reference_point, parent_node, query_graph).lower()
         print(f"Composed NL: {composed_nl}")
         self.assertTrue(composed_nl)
 
@@ -33,8 +33,8 @@ class Test_MRP(unittest.TestCase):
         query = Nested_query()
         query_graph = query.simplified_graph
         query_graph.draw()
-        reference_point, parent_node = None, query_graph.query_subject
-        composed_nl = self.algorithm(query_graph.query_subject, reference_point, parent_node, query_graph).lower()
+        reference_point, parent_node = None, query_graph.query_subjects[0]
+        composed_nl = self.algorithm(query_graph.query_subjects[0], reference_point, parent_node, query_graph).lower()
         print(f"Composed NL: {composed_nl}")
         self.assertTrue(composed_nl)
 
