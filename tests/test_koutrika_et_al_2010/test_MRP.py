@@ -1,6 +1,6 @@
 import unittest
 from src.algorithm.MRP import MRP
-from tests.test_koutrika_et_al_2010.utils import SPJ_query, GroupBy_query, Nested_query
+from tests.test_koutrika_et_al_2010.utils import SPJ_query, GroupBy_query, Nested_query, Nested_query2, Nested_query3
 
 
 class Test_MRP(unittest.TestCase):
@@ -29,7 +29,7 @@ class Test_MRP(unittest.TestCase):
         print(f"Composed NL: {composed_nl}")
         self.assertTrue(composed_nl)
 
-    def test_nested(self):
+    def test_nested1(self):
         query = Nested_query()
         query_graph = query.simplified_graph
         query_graph.draw()
@@ -37,6 +37,25 @@ class Test_MRP(unittest.TestCase):
         composed_nl = self.algorithm(query_graph.query_subjects[0], reference_point, parent_node, query_graph).lower()
         print(f"Composed NL: {composed_nl}")
         self.assertTrue(composed_nl)
+
+    def test_nested2(self):
+        query = Nested_query2()
+        query_graph = query.simplified_graph
+        query_graph.draw()
+        reference_point, parent_node = None, query_graph.query_subjects[0]
+        composed_nl = self.algorithm(query_graph.query_subjects[0], reference_point, parent_node, query_graph).lower()
+        print(f"Composed NL: {composed_nl}")
+        self.assertTrue(composed_nl)
+
+    def test_nested3(self):
+        query = Nested_query3()
+        query_graph = query.simplified_graph
+        query_graph.draw()
+        reference_point, parent_node = None, query_graph.query_subjects[0]
+        composed_nl = self.algorithm(query_graph.query_subjects[0], reference_point, parent_node, query_graph).lower()
+        print(f"Composed NL: {composed_nl}")
+        self.assertTrue(composed_nl)
+
 
 if __name__ == "__main__":
      unittest.main()

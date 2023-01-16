@@ -25,8 +25,8 @@ class OperatorType(IntEnum):
     NotLike = 10
     NotEqual = 11
 OperatorNames = [">", "<", "=", ">=", "<=", "In", "Not In", "Exists", "Not Exists", "Like", "Not Like", "!="]
-OperatorLabels = ["is greater than", "is less than", "is", "is equal to or greater than", 
-                "is equal to or less than", "not in", "exists", "not exists", "like", "not like", "not equal to"]
+OperatorLabels = ["is greater than", "is less than", "is", "is greater than or equal to", 
+                "is less than or equal to", "is in", "is not in", "exists", "not exists", "like", "not like", "not equal to"]
 
 class FunctionType(IntEnum):
     Min =0 
@@ -60,9 +60,10 @@ class Node(metaclass=abc.ABCMeta):
         return self.name.lower()
 
 class Relation(Node):
-    def __init__(self, name, label=None, alias=None):
+    def __init__(self, name, label=None, alias=None, is_primary=False):
         super().__init__(name, label)
         self.alias = alias
+        self.is_primary = is_primary
 
 class Attribute(Node):
     def __init__(self, name, label=None):
@@ -215,8 +216,22 @@ class Query_graph(nx.DiGraph):
 
     @property
     def leaf_relations(self):
-        """ Relations that has no outgoging path to other relations """
-        return [src_r for src_r in self.relations if all([not nx.has_path(self, src_r, dst_r) for dst_r in self.relations if src_r != dst_r])]
+        """ Relations that satisfy one of the following
+            1. has no out-goging path to other relations.
+            2. Or has out-goging path to other than relation for nested query. (i.e. outgoing edge of Selection)
+        """
+        cond_1_nodes = [src_r for src_r in self.relations if all([not nx.has_path(self, src_r, dst_r) for dst_r in self.relations if src_r != dst_r])]
+        # cond_2_nodes = []
+        # # Check if any relation is connect with other relation with selection
+        # for relation in self.relations:
+        #     for one_hop_node in self.get_neighbors(relation):
+        #         if type(self.edges[relation, one_hop_node]['data']) == Selection:
+        #             two_hop_nodes = self.get_neighbors(one_hop_node)
+        #             assert len(two_hop_nodes) < 2, f"only one node should be connect at max, but found {len(two_hop_nodes)}"
+        #             two_hop_node = two_hop_nodes[0]
+        #             if type(self.edges[one_hop_node, two_hop_node]['data']) == Predicate and type(two_hop_node) in [Function, Attribute]:
+        #                 cond_2_nodes.append(relation)
+        return cond_1_nodes #+ cond_2_nodes
 
     @property
     def reference_points(self):
@@ -225,13 +240,21 @@ class Query_graph(nx.DiGraph):
             - list of Relations
         details:
             Any relation that satisfies at least one of four conditions:
-                1. RP is a primary relation with membership edges
+                1. RP is a primary relation with membership edges (In the original paper, it is for primary relations only)
                 2. RP is a branching point, i.e., a relation that connects to more than one relation through paths directed from this relation to the other relations
                 3. RP is a leaf relation, i.e., a relation with no outgoing paths to other relations on the query graph (This is for query with nesting)
                 4. the minimum distance of RP from the closest reference point is greater than a pre-defined threshold
         """
+        def shortest_path_length(node1, node2):
+            if nx.has_path(self, node1, node2):
+                src, dst = node1, node2
+            elif nx.has_path(self, node2, node1):
+                dst, src = node1, node2
+            else:
+                raise RuntimeError(f"No path between {node1} and {node2}")
+            return nx.shortest_path_length(self, src, dst)
         # condition 1
-        reference_points = [p_relations for p_relations in self.primary_relations if self._get_number_of_projecting_attributes(p_relations)]
+        reference_points = [p_relations for p_relations in self.relations if self._get_number_of_projecting_attributes(p_relations)]
 
         # condition 2
         for r1 in self.relations:
@@ -258,8 +281,7 @@ class Query_graph(nx.DiGraph):
             # Pass if already a reference point
             if r1 in reference_points:
                 continue
-            # Add relation as a reference point, if leaft relation if there is not path to any other relation
-            assert (r1 in self.leaf_relations) == all([not nx.has_path(self, r1, r2) for r2 in self.relations if r1 != r2]), "Need debugging on leaf relation"
+            # Add relation as a reference point, if leaf relation if there is not path to any other relation
             if r1 in self.leaf_relations:
             # if all([not nx.has_path(self, r1, r2) for r2 in self.relations if r1 != r2]):
                 reference_points.append(r1)
@@ -270,7 +292,7 @@ class Query_graph(nx.DiGraph):
             if r1 in reference_points:
                 continue
             # Get minimum distance to other reference points
-            shortest_path_lengths = [nx.shortest_path_length(self, r1, rp) for rp in reference_points]
+            shortest_path_lengths = [shortest_path_length(rp, r1) for rp in reference_points]
             min_distance = min(shortest_path_lengths) if shortest_path_lengths else float('inf')
             # If minimum distance greater than the threshold
             if min_distance > self.reference_point_distance_threshold:
@@ -282,8 +304,11 @@ class Query_graph(nx.DiGraph):
 
     @property
     def primary_relations(self):
-        """TODO: Annotation for primary relation should be given from the datase graph.
+        """TODO: Annotation for primary relation should be given from the database graph.
                 But, for now, we determine it by whether the relation contains any projection attribute"""
+        pre_defined_p_relations = [r for r in self.relations if r.is_primary]
+        if pre_defined_p_relations:
+            return pre_defined_p_relations
         return list(filter(lambda r: self._get_number_of_projecting_attributes(r), self.relations))
 
     @property
@@ -315,7 +340,7 @@ class Query_graph(nx.DiGraph):
 
     @property
     def query_subjects(self):
-        """primary relations that has the mininum distance to its farthest relations. (When more than one is found, we return those with the most number of projecting attributes)
+        """primary relations that has the minimum distance to its farthest relations. (When more than one is found, we return those with the most number of projecting attributes)
         """
         def get_shortest_distance(src_node, dst_node):
             return nx.shortest_path_length(self, src_node, dst_node)
@@ -418,3 +443,11 @@ class Query_graph(nx.DiGraph):
 
     def get_one_hop_path_of(self, node):
         return [(src, self.edges[src, dst]['data'], dst) for src, dst in self.edges(node)]
+
+    def get_neighbors(self, node):
+        """Return neighbors who connected to this node with outgoging edges
+
+        :param node: _description_
+        :type node: List[Node]
+        """
+        return [dst for _, dst in self.out_edges(node)]
