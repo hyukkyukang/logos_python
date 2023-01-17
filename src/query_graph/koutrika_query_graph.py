@@ -2,8 +2,10 @@ import abc
 import copy
 import hashlib
 from enum import IntEnum
+from typing import Optional, Set
 
 import networkx as nx
+
 
 # Type definition
 class OrderingType(IntEnum):
@@ -215,23 +217,19 @@ class Query_graph(nx.DiGraph):
         self.reference_point_distance_threshold = rp_dist_threshold
 
     @property
+    def branching_relations(self):
+        if not hasattr(self, '_branching_relations'):
+            self._branching_relations = self.get_branching_points(self.query_subjects[0])
+        return self._branching_relations
+    
+    @property
     def leaf_relations(self):
         """ Relations that satisfy one of the following
-            1. has no out-goging path to other relations.
-            2. Or has out-goging path to other than relation for nested query. (i.e. outgoing edge of Selection)
+            1. has no out-going path to other non-visited relation when graph traversing from the query subject
         """
-        cond_1_nodes = [src_r for src_r in self.relations if all([not nx.has_path(self, src_r, dst_r) for dst_r in self.relations if src_r != dst_r])]
-        # cond_2_nodes = []
-        # # Check if any relation is connect with other relation with selection
-        # for relation in self.relations:
-        #     for one_hop_node in self.get_neighbors(relation):
-        #         if type(self.edges[relation, one_hop_node]['data']) == Selection:
-        #             two_hop_nodes = self.get_neighbors(one_hop_node)
-        #             assert len(two_hop_nodes) < 2, f"only one node should be connect at max, but found {len(two_hop_nodes)}"
-        #             two_hop_node = two_hop_nodes[0]
-        #             if type(self.edges[one_hop_node, two_hop_node]['data']) == Predicate and type(two_hop_node) in [Function, Attribute]:
-        #                 cond_2_nodes.append(relation)
-        return cond_1_nodes #+ cond_2_nodes
+        if not hasattr(self, '_leaf_relations'):
+            self._leaf_relations = self.get_leaf_nodes(self.query_subjects[0])
+        return self._leaf_relations
 
     @property
     def reference_points(self):
@@ -261,19 +259,7 @@ class Query_graph(nx.DiGraph):
             # Pass if already a reference point
             if r1 in reference_points:
                 continue
-
-            # Accumulate starting edges to other relations
-            start_list = set()
-            relations_except_r1 = [r2 for r2 in self.relations if r1 != r2]
-            for r2 in relations_except_r1:
-                # Get all simple paths
-                simple_path_starts = [simple_path[0] for simple_path in nx.all_simple_edge_paths(self, r1, r2)]
-                start_list.union(set(simple_path_starts))
-            
-            # Branching point if there is more than one starting points to other relations && 
-            #   there are more than one relations (because there could be different paths to a single relation)
-            if len(start_list) > 1 and len(relations_except_r1) > 1:
-                # Add this relation as a reference point
+            if r1 in self.branching_relations:
                 reference_points.append(r1)
 
         # condition 3
@@ -451,3 +437,64 @@ class Query_graph(nx.DiGraph):
         :type node: List[Node]
         """
         return [dst for _, dst in self.out_edges(node)]
+    
+    def get_leaf_nodes(self, node: Node, visited_nodes=set()):
+        """Return leaf nodes when traversing from the given node (visiting a node only once)
+
+        :param node: node the begin the traversal
+        :type node: Node
+        """
+        # For all outgoing edges
+        visited_nodes.add(node)
+        leaf_nodes = []
+        for _, dst in self.out_edges(node):
+            if dst not in visited_nodes:
+                if type(dst) == Relation and self.number_of_non_visited_relation_nodes(dst, visited_nodes) == 0:
+                    leaf_nodes.append(dst)
+                else:
+                    leaf_nodes.extend(self.get_leaf_nodes(dst, visited_nodes))
+        return leaf_nodes
+
+    def get_branching_points(self, node: Node, visited_nodes=set()):
+        """Return branching points when traversing from the given node (visiting a node only once)
+
+        :param node: node the begin the traversal
+        :type node: Node
+        """
+        # For all outgoing edges
+        visited_nodes.add(node)
+        branching_points = []
+        for _, dst in self.out_edges(node):
+            if dst not in visited_nodes:
+                if type(dst) == Relation and self.number_of_non_visited_relation_nodes(dst, visited_nodes) > 1:
+                    branching_points.append(dst)
+                else:
+                    branching_points.extend(self.get_branching_points(dst, visited_nodes))
+        return branching_points
+
+    def number_of_non_visited_relation_nodes(self, node: Node, visited_nodes: Optional[Set[Node]]= None):
+        """Return the number of non-visited and neighboring relation nodes from the given node 
+        Note that by neighboring, it means that the relation node is connected to the given node through an edge or path of non-relation nodes
+
+        :param node: node the begin the traversal
+        :type node: Node
+        """
+        # Initialize
+        if visited_nodes is None:
+            visited_nodes=set()
+            
+        # For all outgoing edges
+        visited_nodes.add(node)
+        num = 0
+        for _, dst in self.out_edges(node):
+            if dst not in visited_nodes:
+                if type(dst) == Relation:
+                    num += 1
+                else:
+                    num += self.number_of_non_visited_relation_nodes(dst, visited_nodes)
+        return num
+    
+    
+    # Basic Graph Related Utility 
+    def get_edge(self, src: Node, dst:Node) -> Edge:
+        return self.edges[src, dst]['data']

@@ -1,5 +1,12 @@
 import networkx as nx
-from src.query_graph.koutrika_query_graph import Node, Value, Selection, Membership, Having, Predicate, Grouping, Order, Relation, Attribute, Transformation, Function
+
+from src.algorithm.string_builder import StringBuilder
+from src.query_graph.koutrika_query_graph import (Attribute, Function,
+                                                  Grouping, Having, Membership,
+                                                  Node, Order, Predicate,
+                                                  Query_graph, Relation,
+                                                  Selection, Transformation,
+                                                  Value)
 
 IS_DEBUG = True
 
@@ -26,7 +33,7 @@ class MRP():
             - cStr (clause)
     """
     def __init__(self):
-        self.visited_relations = set()
+        self.visited_nodes = set()
         self.path = []
         self.group_by_nodes = []
         self.order_by_nodes = []
@@ -45,7 +52,7 @@ class MRP():
         return len(self.order_by_nodes) > 0
 
     def __call__(self, *args, **kwargs) -> str:
-        cStr, meta_info = self._call(*args, **kwargs)
+        cStr = self._call(*args, **kwargs)
 
         # My logic
         # Add string for group by
@@ -77,7 +84,7 @@ class MRP():
             """Return whetther the edge is constructed for order by clause"""
             return type(query_graph.edges[node1, node2]['data']) == Order
         def get_non_visited_outgoing_nodes(node: Node):
-            return [dst for _, dst in query_graph.out_edges(node) if dst not in self.visited_relations]
+            return [dst for _, dst in query_graph.out_edges(node) if dst not in self.visited_nodes]
         def get_next_non_visited_relation(node: Node):
             dst_nodes = get_non_visited_outgoing_nodes(node)
             assert len(dst_nodes) < 2, f"there should be only one out going node, but found {len(dst_nodes)}"
@@ -86,47 +93,53 @@ class MRP():
             if type(dst_node) == Relation or dst_node is None:
                 return dst_node
             return get_next_non_visited_relation(dst_node)
-            
-        def get_edge(src: Node, dst: Node):
-            return query_graph.edges[src, dst]['data']
 
         # Check if input node is valid
-        assert type(current_node) == Relation, f"Input node should be a relation, not {type(current_node)}"
-        assert has_path(parent_node, current_node), f"Current node {current_node} is not reachable from Parent node {parent_node}"
+        # assert type(current_node) == Relation, f"Input node should be a relation, not {type(current_node)}"
+        if parent_node:
+            assert has_path(parent_node, current_node), f"Current node {current_node} is not reachable from Parent node {parent_node}"
 
         debug_print(f"Entering node: {current_node.name}")
         return_info = {
             "projection": False,
             "condition": False
-        }
-        self.visited_relations.add(current_node)
-        self.path.append([parent_node, current_node])
+        } 
+        # Set visited 
+        self.visited_nodes.add(current_node)
+        string_builder = StringBuilder()
+        
+        # Save into the path
+        if parent_node:
+            self.path.append([parent_node, current_node])
 
         # Construct a description if the current node is a reference point
-        if True:
-        # if current_node in query_graph.reference_points:
+        if current_node in query_graph.reference_points:
             # Create description for projection if there is a incoming edges
             if has_incoming_edge(current_node):
-                desc = self.label_mv(current_node, query_graph)
-                if desc:
-                    cStr += desc
-                    return_info["projection"] = True
+                string_builder.combine(self.label_mv(current_node, query_graph))
 
-            # Append predicate description for all path history (including the current node)
-            # Note: Description for src_node should already be covered. We construct description for dst_node only.
-            #       We construct description for dst_node only.
             while self.path:
-                src_node, dst_node = self.path.pop(0)
-                assert has_path(src_node, dst_node), f"Path does not exist between {src_node.name} and {dst_node.name}"
-                desc = self.label_v(query_graph, dst_node)
-                # if has_non_visited_outgoing_edges(dst_node):
-                if desc:
-                    if desc == "its":
-                        cStr += f"{desc}"
-                    else:
-                        cStr += f" whose {desc}"
-                    return_info["condition"] = True
-        
+                # Pop two nodes from the path.
+                #   If the current node has incoming edges, we generate the string from the current node to the reference point
+                #   If the current node has no incoming edges, we generate the string from the reference point to the current node
+                if has_incoming_edge(current_node):
+                    dst_node, src_node = self.path.pop(-1)
+                else:
+                    src_node, dst_node = self.path.pop(0)
+                assert has_path(src_node, dst_node) or has_path(dst_node, src_node), f"Path does not exist between {src_node.name} and {dst_node.name}"
+                # Get the edge description
+                edge_desc = self.label_edge(src_node, dst_node, query_graph)
+                # Get the node description.
+                #   If the node is the visited reference point, don't generate the predicate description
+                #   Else generate the description with the predicate
+                if has_incoming_edge(current_node) and dst_node == current_reference_point:
+                    dst_desc = self.label_node(dst_node)
+                else:
+                    dst_desc = self.label_v(query_graph, dst_node).to_text()
+
+                # Concatenate the description
+                string_builder.add_join_conditions(current_node.label, edge_desc, dst_desc)
+
         # State change for reference point
         next_referece_point = current_node if current_node in query_graph.reference_points else current_reference_point
 
@@ -134,45 +147,36 @@ class MRP():
         for dst in get_non_visited_outgoing_nodes(current_node):
             # Append to group by list
             if is_edge_for_group_by_clause(current_node, dst):
+                self.visited_nodes.add(dst)
                 self.group_by_nodes.append(f"{dst.label} of {current_node.label}")
 
             elif is_edge_for_order_by_clause(current_node, dst):
+                self.visited_nodes.add(dst)
                 self.order_by_nodes.append(f"{dst.label} of {current_node.label}")
 
             elif is_edge_for_having_clause(current_node, dst):
+                self.visited_nodes.add(dst)
                 self.having_clause.append(self.label_having(query_graph, dst))
                 
-            if type(dst) == Relation and dst not in self.visited_relations:
+            if dst not in self.visited_nodes:
                 opened.append((dst, next_referece_point, current_node))
             
             # Is selection and non visited relation
-            elif type(get_edge(current_node, dst)) == Selection:
+            elif type(query_graph.get_edge(current_node, dst)) == Selection:
                 next_relation_node = get_next_non_visited_relation(dst)
                 if next_relation_node:
                     opened.append((next_relation_node, next_referece_point, current_node))
 
-
-        r_cStr_list = [cStr] if cStr else []
         while opened:
             pop_current_node, pop_referece_point, pop_parent_node = opened.pop(-1)
-            r_cStr, returned_info = self._call(pop_current_node, pop_referece_point, pop_parent_node, query_graph, [], "")
+            returned_string = self._call(pop_current_node, pop_referece_point, pop_parent_node, query_graph, [], "")
             
-            # Append string
-            if r_cStr:
-                r_cStr_list.append(r_cStr)
-                if returned_info["projection"] or (return_info["condition"] and returned_info["condition"]):
-                    cStr += " and "
-                if r_cStr == "its":
-                    splits = cStr.split(" ")
-                    cStr = " ".join(splits[:-1] + [r_cStr] + splits[-1:])
-                else:
-                    cStr += r_cStr
-            # Update meta info
-            return_info["projection"] = return_info["projection"] or returned_info["projection"]
-            return_info["condition"] = return_info["condition"] or returned_info["condition"]
+            if returned_string:
+                string_builder.add_sentence(returned_string)
 
         debug_print(f"\nExiting node: {current_node.name} with cStr:{cStr}")
-        return cStr, return_info
+        return string_builder.to_text()
+
 
     def get_grouping_attributes(self, graph, node):
         attributes = [dst for src, dst in graph.out_edges(node) if type(graph.edges[src, dst]['data']) == Grouping]
@@ -183,9 +187,26 @@ class MRP():
         
         return attributes + more_than_one_hop_attributes
 
+    def label_node(self, node) -> str:
+        return node.label
+    
+    def label_edge(self, src_node: Node, dst_node: Node, query_graph: Query_graph) -> str:
+        """Get the description of the edge between two nodes
 
-    def label_mv(self, node, graph):
-        """This function returns text description of the projected attributes of a relation
+        :param src_node: source node of the edge
+        :type src_node: Node
+        :param dst_node: destination node of the edge
+        :type dst_node: Node
+        :param query_graph: query graph
+        :type query_graph: Query_graph
+        :return: description of the edge
+        :rtype: str
+        """
+        edge = query_graph.get_edge(src_node, dst_node)
+        return edge.label
+    
+    def label_mv(self, node: Node, graph: Query_graph) -> str:
+        """This function returns text description of the projected and selection attributes of a relation
         :param node: node of a query graph
         :type node: Node
         :param graph: query graph
@@ -198,30 +219,22 @@ class MRP():
         attributes = [src for src, dst in graph.in_edges(node) if type(graph.edges[src, dst]['data']) == Membership]
         assert all([type(att) == Attribute for att in attributes]), "nodes connected to relation through membership edges should all be attributes"
 
-        # Check if aggregation function is applied
-        atts_labels = []
-        for att in attributes:
-            # Check if any incoming edges of type transformation
-            agg_func = [src for src, dst in graph.in_edges(att) if type(graph.edges[src, dst]['data']) == Transformation]
-            assert len(agg_func) in [0, 1], "Unexpected number of agg func to one attribute"
-            att_label = f"{agg_func[0].label} {att.label}" if agg_func else att.label
-            self.visited_relations.add(att)
-            atts_labels.append(att_label)
+        string_builder = StringBuilder()
 
-        atts_str = ""
-        if len(atts_labels) == 1:
-            atts_str = atts_labels[0]
-        elif len(atts_labels) == 2:
-            atts_str = ' and '.join(atts_labels)
-        elif len(atts_labels) > 2:
-            for idx in range(len(atts_labels)):
-                if idx == 0:
-                    atts_str += atts_labels[idx]
-                elif idx + 1 < len(atts_labels):
-                    atts_str += f", {atts_labels[idx]}"
-                else:
-                    atts_str += f", and {atts_labels[idx]}"
-        return f"the {atts_str} of {node}"
+        # Check if aggregation function is applied
+        for att in attributes:
+            # Check if any incoming edges of type transformation and get agg function
+            incoming_nodes = [src for src, dst in graph.in_edges(att) if type(graph.edges[src, dst]['data']) == Transformation]
+            assert len(incoming_nodes) in [0, 1], "Unexpected number of agg func to one attribute"
+            agg_func_label = incoming_nodes[0].label if incoming_nodes else None
+            # Add projection info
+            string_builder.add_projection(node.label, att.label, agg_func_label)
+            self.visited_nodes.add(att)
+
+        # Check if there is any selection
+        string_builder.combine(self.label_v(graph, node))
+
+        return string_builder
 
     def label_v(self, graph, node):
         """Return text description of node's where conditions
@@ -235,6 +248,8 @@ class MRP():
         if type(node) != Relation:
             return ""
 
+        string_builder = StringBuilder()
+
         conditions = []
         for src, dst in graph.out_edges(node):
             edge = graph.edges[src, dst]['data']
@@ -243,9 +258,13 @@ class MRP():
                     edge2 = graph.edges[dst, dst2]['data']
                     if type(edge2) == Predicate:
                         if type(dst2) == Value:
-                            conditions.append(f"{dst.label} of {src.label} {edge2.label} {dst2.label}")
+                            self.visited_nodes.add(dst)
+                            self.visited_nodes.add(dst2)
+                            string_builder.add_selection(node.label, dst.label, edge2.label, dst2.label)
                         elif type(dst2) == Attribute:
                             # Get parent relations
+                            self.visited_nodes.add(dst)
+                            self.visited_nodes.add(dst2)
                             parent_relations = []
                             for _, node_tmp in graph.out_edges(dst2):
                                 if type(node_tmp) == Relation:
@@ -253,16 +272,20 @@ class MRP():
                             assert len(parent_relations) == 1, f"Unexpected number of parent relations, {len(parent_relations)} "
                             parent_relation = parent_relations[0]
                             # If parent relation is visited, create a string for nested query. Else pass  
-                            if node_tmp in self.visited_relations:
+                            raise NotImplementedError("Nested query not implemented yet")
+                            if node_tmp in self.visited_nodes:
                                 # Must be correlation
                                 assert edge2.label == "is", f"Bad assumption. Value is {edge2.label}"
                                 assert dst.label == dst2.label, f"Bad assumption. Values are {dst.label} and {dst2.label}"
-                                conditions.append(f"its")
+                                string_builder.add_selection(dst.label, edge2.label, dst.label)
                                 # conditions.append(f"{dst.label} {edge2.label} {dst2.label} of {parent_relation.label} ({parent_relation.alias})")
                             else:
                                 value_str, meta_info = self._call(parent_relation, parent_relation, parent_relation, graph, [], "")
                                 conditions.append(f"{dst.label} {edge2.label} {value_str}")
+                                string_builder.add_selection(dst.label, edge2.label, value_str)
                         elif type(dst2) == Function:
+                            self.visited_nodes.add(dst)
+                            self.visited_nodes.add(dst2)
                             # Get attribute
                             dst_lists = [n for _, n in graph.out_edges(dst2) if type(n) == Attribute]
                             assert len(dst_lists) == 1, f"Unexpected number of attirbute, {len(dst_lists)} "
@@ -274,16 +297,16 @@ class MRP():
                                     parent_relations.append(node_tmp)
                             assert len(parent_relations) == 1, f"Unexpected number of parent relations, {len(parent_relations)} "
                             parent_relation = parent_relations[0]
-                            # If parent relation is visited, create a string for nested query. Else pass  
-                            if node_tmp in self.visited_relations:
-                                conditions.append(f"{dst.label} {edge2.label} {dst2.label} ({parent_relation.alias})")
-                            else:
-                                value_str, meta_info = self._call(parent_relation, parent_relation, parent_relation, graph, [], "")
-                                conditions.append(f"{dst.label} {edge2.label} {value_str}")
-
+                            raise NotImplementedError("Nested query not implemented yet")
+                            # # If parent relation is visited, create a string for nested query. Else pass  
+                            # if node_tmp in self.visited_nodes:
+                            #     conditions.append(f"{dst.label} {edge2.label} {dst2.label} ({parent_relation.alias})")
+                            # else:
+                            #     value_str, meta_info = self._call(parent_relation, parent_relation, parent_relation, graph, [], "")
+                                # conditions.append(f"{dst.label} {edge2.label} {value_str}")
 
         # Check if current node has attributes and values
-        return f"{' and '.join(conditions)}"
+        return string_builder
     
     def label_having(self, graph, node):
         """Return text description of node's having conditions

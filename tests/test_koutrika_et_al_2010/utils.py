@@ -752,31 +752,31 @@ class SPJ_query(Query):
             # Attribute
             comments_text = Attribute("Text")
             comments_rating = Attribute("Rating")
-            comments_stuid = Attribute("Stuid")
+            comments_stuid = Attribute("comments.Stuid", "StuID")
 
-            students_name = Attribute("Name")
-            students_gpa = Attribute("GPA")
-            students_class = Attribute("Class")
-            students_stuid1 = Attribute("stuID")
-            students_stuid2 = Attribute("stuID")
+            students_name = Attribute("Student.Name", "name")
+            students_gpa = Attribute("Student.GPA", "GPA")
+            students_class = Attribute("Student.Class", "Class")
+            students_stuid1 = Attribute("stuID1", "stuID")
+            students_stuid2 = Attribute("stuID2", "stuID")
 
-            studentHistory_stuid = Attribute("stuID")
-            studentHistory_courseid = Attribute("CourseID")
+            studentHistory_stuid = Attribute("stuID3", "StuID")
+            studentHistory_courseid = Attribute("studenthistory.CourseID", "CourseID")
 
-            courses_courseid1 = Attribute("CourseID")
-            courses_courseid2 = Attribute("CourseID")
+            courses_courseid1 = Attribute("coursese.CourseID1", "CourseID")
+            courses_courseid2 = Attribute("coursese.CourseID2", "CourseID")
             courses_title = Attribute("Title")
-            courses_depid = Attribute("DepID")
+            courses_depid = Attribute("courses.DepID", "DepID")
 
             departments_depid = Attribute("DepID")
-            departments_name = Attribute("Name")
+            departments_name = Attribute("deparment.Name", "Name")
 
-            courseSched_courseid = Attribute("CourseID")
-            courseSched_instrid = Attribute("InstrID")
+            courseSched_courseid = Attribute("courseSched.CourseID", "CourseID")
+            courseSched_instrid = Attribute("courseSched.InstrID", "InstrID")
             courseSched_term = Attribute("Term")
 
-            instructors_name = Attribute("Name")
-            instructors_instrid = Attribute("InstrID")
+            instructors_name = Attribute("instructors.Name", "Name")
+            instructors_instrid = Attribute("instructors.InstrID", "InstrID")
 
             # Values
             v_3 = Value("3")
@@ -828,18 +828,13 @@ class SPJ_query(Query):
             # Attribute
             comments_text = Attribute("Text", "description")
             comments_rating = Attribute("Rating")
-
-            students_name = Attribute("Name", "name")
+            students_name = Attribute("students.Name", "name")
             students_gpa = Attribute("GPA", "gpa")
-            students_class = Attribute("Class", "class")
-
+            students_class = Attribute("students.class", "class")
             courses_title = Attribute("Title", "title")
-
-            departments_name = Attribute("Name", "name")
-
+            departments_name = Attribute("departments.Name", "name")
             courseSched_term = Attribute("Term", "term")
-
-            instructors_name = Attribute("Name", "name")
+            instructors_name = Attribute("instructors.Name", "name")
 
             # Values
             v_3 = Value("3")
