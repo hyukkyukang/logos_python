@@ -52,7 +52,8 @@ class MRP():
         return len(self.order_by_nodes) > 0
 
     def __call__(self, *args, **kwargs) -> str:
-        cStr = self._call(*args, **kwargs)
+        string_builder = self._call(*args, **kwargs)
+        cStr = f"{string_builder.to_text()}"
 
         # My logic
         # Add string for group by
@@ -116,7 +117,7 @@ class MRP():
         if current_node in query_graph.reference_points:
             # Create description for projection if there is a incoming edges
             if has_incoming_edge(current_node):
-                string_builder.combine(self.label_mv(current_node, query_graph))
+                string_builder.combine(self.label_mv(current_node, current_node, query_graph))
 
             while self.path:
                 # Pop two nodes from the path.
@@ -132,13 +133,19 @@ class MRP():
                 # Get the node description.
                 #   If the node is the visited reference point, don't generate the predicate description
                 #   Else generate the description with the predicate
-                if has_incoming_edge(current_node) and dst_node == current_reference_point:
-                    dst_desc = self.label_node(dst_node)
-                else:
-                    dst_desc = self.label_v(query_graph, dst_node).to_text()
+                if dst_node != current_reference_point:
+                    dst_string_builder = self.label_v(query_graph, current_node if has_incoming_edge(current_node) else current_reference_point, dst_node)
+                    string_builder.combine(dst_string_builder)
+                    
+                dst_desc = self.label_node(dst_node)
+                # if has_incoming_edge(current_node) and dst_node == current_reference_point:
+                #     dst_desc = self.label_node(dst_node)
+                # else:
+                #     dst_string_builder = self.label_v(query_graph, dst_node)
+                #     dst_desc = dst_desc.to_text()
 
                 # Concatenate the description
-                string_builder.add_join_conditions(current_node.label, edge_desc, dst_desc)
+                string_builder.add_join_conditions(current_reference_point.label, current_node.label, edge_desc, dst_desc, has_incoming_edge(current_node))
 
         # State change for reference point
         next_referece_point = current_node if current_node in query_graph.reference_points else current_reference_point
@@ -169,13 +176,15 @@ class MRP():
 
         while opened:
             pop_current_node, pop_referece_point, pop_parent_node = opened.pop(-1)
-            returned_string = self._call(pop_current_node, pop_referece_point, pop_parent_node, query_graph, [], "")
-            
-            if returned_string:
-                string_builder.add_sentence(returned_string)
+            # returned_string = self._call(pop_current_node, pop_referece_point, pop_parent_node, query_graph, [], "")
+            tmp = self._call(pop_current_node, pop_referece_point, pop_parent_node, query_graph, [], "")
+            string_builder.combine(tmp)
+            # if returned_string:
+            #     string_builder.add_sentence(returned_string)
 
         debug_print(f"\nExiting node: {current_node.name} with cStr:{cStr}")
-        return string_builder.to_text()
+        return string_builder
+        # return string_builder.to_text()
 
 
     def get_grouping_attributes(self, graph, node):
@@ -205,7 +214,7 @@ class MRP():
         edge = query_graph.get_edge(src_node, dst_node)
         return edge.label
     
-    def label_mv(self, node: Node, graph: Query_graph) -> str:
+    def label_mv(self, node: Node, reference_point: Node, graph: Query_graph) -> str:
         """This function returns text description of the projected and selection attributes of a relation
         :param node: node of a query graph
         :type node: Node
@@ -232,11 +241,11 @@ class MRP():
             self.visited_nodes.add(att)
 
         # Check if there is any selection
-        string_builder.combine(self.label_v(graph, node))
+        string_builder.combine(self.label_v(graph, reference_point, node))
 
         return string_builder
 
-    def label_v(self, graph, node):
+    def label_v(self, graph, reference_point, node):
         """Return text description of node's where conditions
         :param graph: query graph
         :type graph: Graph
@@ -260,7 +269,7 @@ class MRP():
                         if type(dst2) == Value:
                             self.visited_nodes.add(dst)
                             self.visited_nodes.add(dst2)
-                            string_builder.add_selection(node.label, dst.label, edge2.label, dst2.label)
+                            string_builder.add_selection(reference_point.label, node.label, dst.label, edge2.label, dst2.label)
                         elif type(dst2) == Attribute:
                             # Get parent relations
                             self.visited_nodes.add(dst)

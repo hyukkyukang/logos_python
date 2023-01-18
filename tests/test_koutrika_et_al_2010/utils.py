@@ -907,12 +907,7 @@ class SPJ_query(Query):
 
     @property
     def MRP_nl(self) -> str:
-        return """
-            Find the names of course and the names of instructor associated with whose term is spring, 
-            for associated with these course, for course are offered department whose name is cs, 
-            also the names and gpas of student whose class is 2011 for student have taken, for associated with these course, 
-            and also the descriptions of comments whose rating is greater than 3 for comments associated with these student.
-            """
+        return "find title of courses in which courses are offered departments and name of departments is cs, gpa and name of students in which students have taken courses and class of students is 2011, description of comments in which comments are given by students and rating of comments is greater than 3, name of instructors in which instructors teach courses and term is spring."
 
     @property
     def TMT_nl(self) -> str:
