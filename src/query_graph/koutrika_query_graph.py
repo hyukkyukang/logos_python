@@ -2,7 +2,7 @@ import abc
 import copy
 import hashlib
 from enum import IntEnum
-from typing import Optional, Set
+from typing import Optional, Set, List, Tuple, Union
 
 import networkx as nx
 
@@ -244,9 +244,9 @@ class Query_graph(nx.DiGraph):
                 4. the minimum distance of RP from the closest reference point is greater than a pre-defined threshold
         """
         def shortest_path_length(node1, node2):
-            if nx.has_path(self, node1, node2):
+            if self.has_path(node1, node2):
                 src, dst = node1, node2
-            elif nx.has_path(self, node2, node1):
+            elif self.has_path(node2, node1):
                 dst, src = node1, node2
             else:
                 raise RuntimeError(f"No path between {node1} and {node2}")
@@ -269,7 +269,6 @@ class Query_graph(nx.DiGraph):
                 continue
             # Add relation as a reference point, if leaf relation if there is not path to any other relation
             if r1 in self.leaf_relations:
-            # if all([not nx.has_path(self, r1, r2) for r2 in self.relations if r1 != r2]):
                 reference_points.append(r1)
 
         # condition 4
@@ -347,8 +346,9 @@ class Query_graph(nx.DiGraph):
         return query_subjects
 
     def _get_number_of_projecting_attributes(self, relation):
-        assert type(relation) == Relation
-        return len([1 for src, dst in self.all_edges_of(relation) if type(self.edges[src, dst]['data']) == Membership])
+        assert type(relation) == Relation, f"Expected relation, but got {type(relation)}"
+        return len(list(filter(lambda nodes: type(self.get_edge(nodes[0], nodes[1])) == Membership, self.all_edges_of(relation))))
+            
 
     ### Utils for graph construction
     def add_node_if_not_exist(self, node):
@@ -424,8 +424,12 @@ class Query_graph(nx.DiGraph):
         nx.draw(self, nx.spring_layout(self), labels=labels, node_color=node_color_list)
 
     ### Utils for traversal
-    def all_edges_of(self, node):
-        return [(src, dst) for src, dst in self.out_edges(node)] + [(src, dst) for src, dst in self.in_edges(node)]
+    def all_edges_of(self, node: Node) -> List[Tuple[Node, Node]]:
+        # Get all incoming nodes
+        incoming_nodes = self.get_in_edges(node)
+        # Get all outgoing nodes
+        outgoing_nodes = self.get_out_going_nodes(node)
+        return [(src, node) for src in incoming_nodes] + [(node, dst) for dst in outgoing_nodes]
 
     def get_one_hop_path_of(self, node):
         return [(src, self.edges[src, dst]['data'], dst) for src, dst in self.edges(node)]
@@ -436,7 +440,7 @@ class Query_graph(nx.DiGraph):
         :param node: _description_
         :type node: List[Node]
         """
-        return [dst for _, dst in self.out_edges(node)]
+        return [dst for dst in self.get_out_going_nodes(node)]
     
     def get_leaf_nodes(self, node: Node, visited_nodes=set()):
         """Return leaf nodes when traversing from the given node (visiting a node only once)
@@ -447,7 +451,7 @@ class Query_graph(nx.DiGraph):
         # For all outgoing edges
         visited_nodes.add(node)
         leaf_nodes = []
-        for _, dst in self.out_edges(node):
+        for dst in self.get_out_going_nodes(node):
             if dst not in visited_nodes:
                 if type(dst) == Relation and self.number_of_non_visited_relation_nodes(dst, visited_nodes) == 0:
                     leaf_nodes.append(dst)
@@ -464,7 +468,7 @@ class Query_graph(nx.DiGraph):
         # For all outgoing edges
         visited_nodes.add(node)
         branching_points = []
-        for _, dst in self.out_edges(node):
+        for dst in self.get_out_going_nodes(node):
             if dst not in visited_nodes:
                 if type(dst) == Relation and self.number_of_non_visited_relation_nodes(dst, visited_nodes) > 1:
                     branching_points.append(dst)
@@ -486,7 +490,7 @@ class Query_graph(nx.DiGraph):
         # For all outgoing edges
         visited_nodes.add(node)
         num = 0
-        for _, dst in self.out_edges(node):
+        for dst in self.get_out_going_nodes(node):
             if dst not in visited_nodes:
                 if type(dst) == Relation:
                     num += 1
@@ -494,7 +498,36 @@ class Query_graph(nx.DiGraph):
                     num += self.number_of_non_visited_relation_nodes(dst, visited_nodes)
         return num
     
-    
     # Basic Graph Related Utility 
+    def get_out_going_nodes(self, node: Node) -> List[Tuple[Node, Node]]:
+        dst = map(lambda node_pair: node_pair[1], super().out_edges(node))
+        # Filter the node itself
+        dst = list(filter(lambda x: x != node, dst))
+        return dst
+    
+    def get_in_edges(self, node: Node) -> List[Tuple[Node, Node]]:
+        src = map(lambda node_pair: node_pair[0], super().in_edges(node))
+        # Filter the node itself
+        src = list(filter(lambda x: x != node, src))
+        return src
+    
     def get_edge(self, src: Node, dst:Node) -> Edge:
         return self.edges[src, dst]['data']
+    
+    def has_path(self, src: Node, dst: Node) -> bool:
+        return nx.has_path(self, src, dst)
+    
+    def has_membership_edge(self, node: Node) -> bool:
+        return any([type(self.get_edge(src, dst)) == Membership for src, dst in self.in_edges(node)])
+
+    def get_membership_nodes(self, node: Node) -> List[Node]:
+        assert(type(node) == Relation, f"The input node should be a relation, but found {type(node)}")
+        attributes =  [src for src, dst in self.in_edges(node) if type(self.get_edge(src, dst)) == Membership]
+        assert all([type(att) == Attribute for att in attributes]), "nodes connected to relation through membership edges should all be attributes"
+        return attributes
+    
+    def get_function_node_to(self, node: Node) -> Union[Node, None]:
+        # We assume incoming nodes only
+        function_nodes = list(filter(lambda src: type(self.get_edge(src, node)) == Transformation, self.get_in_edges(node)))
+        assert len(function_nodes) < 2, f"Unexpected number of agg func to one attribute, found {len(function_nodes)}"
+        return function_nodes[0] if len(function_nodes) > 0 else None

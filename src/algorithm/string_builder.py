@@ -180,7 +180,7 @@ class StringBuilder():
     def add_sentence(self, sentence: str) -> str:
         self.sentences.append(sentence)
 
-    def combine(self, string_builder) -> None:
+    def add(self, string_builder) -> None:
         self.projection.extend(string_builder.projection)
         self.selection.extend(string_builder.selection)
         self.join_conditions.extend(string_builder.join_conditions)
