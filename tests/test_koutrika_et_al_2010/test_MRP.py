@@ -21,40 +21,16 @@ class Test_MRP(unittest.TestCase):
         self._test_query(SPJ_query(), "SPJ")
 
     def test_group(self):
-        query = GroupBy_query()
-        query_graph = query.simplified_graph
-        # query_graph.draw()
-        reference_point, parent_node = None, None
-        composed_nl = self.algorithm(query_graph.query_subjects[0], parent_node, reference_point, query_graph).lower()
-        print(f"Composed NL: {composed_nl}")
-        self.assertTrue(composed_nl)
+        self._test_query(GroupBy_query(), "GroupBy")
 
     def test_nested1(self):
-        query = Nested_query()
-        query_graph = query.simplified_graph
-        # query_graph.draw()
-        reference_point, parent_node = None, None
-        composed_nl = self.algorithm(query_graph.query_subjects[0], parent_node, reference_point, query_graph).lower()
-        print(f"Composed NL: {composed_nl}")
-        self.assertTrue(composed_nl)
+        self._test_query(Nested_query(), "Nested1")
 
     def test_nested2(self):
-        query = Nested_query2()
-        query_graph = query.simplified_graph
-        # query_graph.draw()
-        reference_point, parent_node = None, None
-        composed_nl = self.algorithm(query_graph.query_subjects[0], parent_node, reference_point, query_graph).lower()
-        print(f"Composed NL: {composed_nl}")
-        self.assertTrue(composed_nl)
+        self._test_query(Nested_query2(), "Nested2")
 
     def test_nested3(self):
-        query = Nested_query3()
-        query_graph = query.simplified_graph
-        # query_graph.draw()
-        reference_point, parent_node = None, None
-        composed_nl = self.algorithm(query_graph.query_subjects[0], parent_node, reference_point, query_graph).lower()
-        print(f"Composed NL: {composed_nl}")
-        self.assertTrue(composed_nl)
+        self._test_query(Nested_query3(), "Nested3")
 
 
 if __name__ == "__main__":

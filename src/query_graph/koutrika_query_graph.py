@@ -426,7 +426,7 @@ class Query_graph(nx.DiGraph):
     ### Utils for traversal
     def all_edges_of(self, node: Node) -> List[Tuple[Node, Node]]:
         # Get all incoming nodes
-        incoming_nodes = self.get_in_edges(node)
+        incoming_nodes = self.get_incoming_nodes(node)
         # Get all outgoing nodes
         outgoing_nodes = self.get_out_going_nodes(node)
         return [(src, node) for src in incoming_nodes] + [(node, dst) for dst in outgoing_nodes]
@@ -499,13 +499,13 @@ class Query_graph(nx.DiGraph):
         return num
     
     # Basic Graph Related Utility 
-    def get_out_going_nodes(self, node: Node) -> List[Tuple[Node, Node]]:
+    def get_out_going_nodes(self, node: Node) -> List[Node]:
         dst = map(lambda node_pair: node_pair[1], super().out_edges(node))
         # Filter the node itself
         dst = list(filter(lambda x: x != node, dst))
         return dst
     
-    def get_in_edges(self, node: Node) -> List[Tuple[Node, Node]]:
+    def get_incoming_nodes(self, node: Node) -> List[Node]:
         src = map(lambda node_pair: node_pair[0], super().in_edges(node))
         # Filter the node itself
         src = list(filter(lambda x: x != node, src))
@@ -526,8 +526,19 @@ class Query_graph(nx.DiGraph):
         assert all([type(att) == Attribute for att in attributes]), "nodes connected to relation through membership edges should all be attributes"
         return attributes
     
+    def get_function_node_from(self, node: Node) -> Union[Node, None]:
+        # We assume incoming nodes only
+        function_nodes = list(filter(lambda dst: type(self.get_edge(node, dst)) == Transformation, self.get_out_going_nodes(node)))
+        assert len(function_nodes) < 2, f"Unexpected number of agg func to one attribute, found {len(function_nodes)}"
+        function_node = function_nodes[0] if len(function_nodes) > 0 else None
+        if function_node:
+            assert type(function_node) == Function, f"Unexpected type of function node, found {type(function_node)}"
+        return function_node
     def get_function_node_to(self, node: Node) -> Union[Node, None]:
         # We assume incoming nodes only
-        function_nodes = list(filter(lambda src: type(self.get_edge(src, node)) == Transformation, self.get_in_edges(node)))
+        function_nodes = list(filter(lambda src: type(self.get_edge(src, node)) == Transformation, self.get_incoming_nodes(node)))
         assert len(function_nodes) < 2, f"Unexpected number of agg func to one attribute, found {len(function_nodes)}"
-        return function_nodes[0] if len(function_nodes) > 0 else None
+        function_node = function_nodes[0] if len(function_nodes) > 0 else None
+        if function_node:
+            assert type(function_node) == Function, f"Unexpected type of function node, found {type(function_node)}"
+        return function_node

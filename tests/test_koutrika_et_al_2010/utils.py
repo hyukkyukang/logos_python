@@ -198,6 +198,294 @@ class Query(metaclass=abc.ABCMeta):
     def TMT_nl(self) -> str:
         pass
 
+
+class SPJ_query(Query):
+    @property
+    def sql(self):
+        return """
+            SELECT s.name, s.GPA, c.title, i.name, co.text
+            FROM students s, comments co, student history h, courses c, departments d, coursesched cs, instructors i
+            WHERE s.suid = co.suid AND
+                s.suid = h.suid AND
+                h.courseid = c.courseid AND
+                c.depid = d.depid AND
+                c.courseid = cs.courseid AND
+                cs.instrid = i.instrid AND
+                s.class = 2011 AND
+                co.rating > 3 AND
+                cs.term = 'spring' AND
+                d.name = 'CS'
+            """
+    
+    @property
+    def graph(self):
+        if not SPJ_query._graph:
+            # Relation
+            comments = Relation("Comments")
+            students = Relation("Students")
+            studentHistory = Relation("StudentHistory")
+            departments = Relation("Departments")
+            courses = Relation("Courses")
+            courseSched = Relation("CourseSched")
+            instructors = Relation("Instructors")
+
+            # Attribute
+            comments_text = Attribute("Text")
+            comments_rating = Attribute("Rating")
+            comments_stuid = Attribute("comments.Stuid", "StuID")
+
+            students_name = Attribute("Student.Name", "name")
+            students_gpa = Attribute("Student.GPA", "GPA")
+            students_class = Attribute("Student.Class", "Class")
+            students_stuid1 = Attribute("stuID1", "stuID")
+            students_stuid2 = Attribute("stuID2", "stuID")
+
+            studentHistory_stuid = Attribute("stuID3", "StuID")
+            studentHistory_courseid = Attribute("studenthistory.CourseID", "CourseID")
+
+            courses_courseid1 = Attribute("coursese.CourseID1", "CourseID")
+            courses_courseid2 = Attribute("coursese.CourseID2", "CourseID")
+            courses_title = Attribute("Title")
+            courses_depid = Attribute("courses.DepID", "DepID")
+
+            departments_depid = Attribute("DepID")
+            departments_name = Attribute("deparment.Name", "Name")
+
+            courseSched_courseid = Attribute("courseSched.CourseID", "CourseID")
+            courseSched_instrid = Attribute("courseSched.InstrID", "InstrID")
+            courseSched_term = Attribute("Term")
+
+            instructors_name = Attribute("instructors.Name", "Name")
+            instructors_instrid = Attribute("instructors.InstrID", "InstrID")
+
+            # Values
+            v_3 = Value("3")
+            v_2011 = Value("2011")
+            v_cs = Value("CS")
+            v_spring = Value("Spring")
+
+            query_graph = Query_graph("SPJ query")
+            query_graph.connect_membership(comments, comments_text)
+            query_graph.connect_selection(comments, comments_rating)
+            query_graph.connect_predicate(comments_rating, v_3)
+
+            query_graph.connect_join(comments, comments_stuid, students_stuid1, students)
+            
+            query_graph.connect_membership(students, students_name)
+            query_graph.connect_membership(students, students_gpa)
+            query_graph.connect_selection(students, students_class)
+            query_graph.connect_predicate(students_class, v_2011)
+
+            query_graph.connect_join(students, students_stuid2, studentHistory_stuid, studentHistory)
+            query_graph.connect_join(studentHistory, studentHistory_courseid, courses_courseid1, courses)
+            query_graph.connect_membership(courses, courses_title)
+            
+            query_graph.connect_join(courses, courses_depid, departments_depid, departments)
+            query_graph.connect_selection(departments, departments_name)
+            query_graph.connect_predicate(departments_name, v_cs)
+
+            query_graph.connect_join(courses, courses_courseid2, courseSched_courseid, courseSched)
+            query_graph.connect_selection(courseSched, courseSched_term)
+            query_graph.connect_predicate(courseSched_term, v_spring)
+            
+            query_graph.connect_join(courseSched, courseSched_instrid, instructors_instrid, instructors)
+            query_graph.connect_membership(instructors, instructors_name)
+            SPJ_query._graph = query_graph
+        return SPJ_query._graph
+
+    @property
+    def simplified_graph(self):
+        if not SPJ_query._graph:
+            # Relation
+            comments = Relation("Comments", "comments")
+            students = Relation("Students", "students")
+            studentHistory = Relation("StudentHistory", "")
+            departments = Relation("Departments", "departments")
+            courses = Relation("Courses", "courses")
+            courseSched = Relation("CourseSched", "")
+            instructors = Relation("Instructors", "instructors")
+
+            # Attribute
+            comments_text = Attribute("Text", "description")
+            comments_rating = Attribute("Rating")
+            students_name = Attribute("students.Name", "name")
+            students_gpa = Attribute("GPA", "gpa")
+            students_class = Attribute("students.class", "class")
+            courses_title = Attribute("Title", "title")
+            departments_name = Attribute("departments.Name", "name")
+            courseSched_term = Attribute("Term", "term")
+            instructors_name = Attribute("instructors.Name", "name")
+
+            # Values
+            v_3 = Value("3")
+            v_2011 = Value("2011")
+            v_cs = Value("CS")
+            v_spring = Value("Spring", "spring")
+
+            query_graph = Query_graph("SPJ query")
+            query_graph.connect_membership(comments, comments_text)
+            query_graph.connect_selection(comments, comments_rating)
+            query_graph.connect_predicate(comments_rating, v_3, operator=OperatorType.Greaterthan)
+
+            # query_graph.connect(comments, students, "are given by", "gave")
+            query_graph.connect_simplified_join(comments, students, "are given by", "gave")
+            
+            query_graph.connect_membership(students, students_gpa)
+            query_graph.connect_membership(students, students_name)
+            query_graph.connect_selection(students, students_class)
+            query_graph.connect_predicate(students_class, v_2011)
+            
+            query_graph.connect_simplified_join(courses, courseSched, "are taught by", "")
+            # query_graph.connect(courses, courseSched)
+            query_graph.connect_selection(courseSched, courseSched_term)
+            query_graph.connect_predicate(courseSched_term, v_spring)
+
+            query_graph.connect_simplified_join(courseSched, instructors, "", "teach")
+            # query_graph.connect(courseSched, instructors)
+            query_graph.connect_membership(instructors, instructors_name)
+            
+            query_graph.connect_simplified_join(courses, departments, "are offered", "offer")
+            query_graph.connect_selection(departments, departments_name)
+            query_graph.connect_predicate(departments_name, v_cs)
+
+            query_graph.connect_simplified_join(students, studentHistory, "have taken", "")
+            # query_graph.connect(students, studentHistory)
+            query_graph.connect_simplified_join(studentHistory, courses, "", "taken by")
+            # query_graph.connect(studentHistory, courses)
+            query_graph.connect_membership(courses, courses_title)
+            
+            SPJ_query._graph = query_graph
+        return SPJ_query._graph
+
+    @property
+    def specific_templates(self):
+        if not hasattr(self, "_specific_templates"):
+            self._specific_templates = [Template_S_to_I(self.graph), Template_C_to_Val(self.graph), Template_I_to_C(self.graph)]
+        return self._specific_templates
+
+    @property
+    def templates(self):
+        return self.specific_templates + self.generic_templates
+    
+    @property
+    def template_set(self):
+        raise NotImplementedError("Need to add gold for template set")
+        return None
+
+    @property
+    def nl(self):
+        return self.BST_nl
+
+    @property
+    def BST_nl(self) -> str:
+        return """
+            Find the titles of course, the names and gpas of student, the descriptions of comments, and the names of instructor, for course taken by , 
+            for associated with student, for student gave comments, for course are offered department and are taught by, 
+            and for teach instructor. Consider only student whose class is 2011, 
+            comments whose rating is greater than 3, department whose name is cs, and whose term is spring.
+            """
+
+    @property
+    def MRP_nl(self) -> str:
+        return "find title of courses in which courses are offered departments and name of departments is cs, gpa and name of students in which students have taken courses and class of students is 2011, description of comments in which comments are given by students and rating of comments is greater than 3, name of instructors in which instructors teach courses and term is spring."
+
+    @property
+    def TMT_nl(self) -> str:
+        return """
+            Find the gpa and name of students whose class is 2011 and have been in classes of instructors 
+            and find the name of these instructors, whose lectures on courses are in spring and find the
+            title of these CS courses and the description of comments whose rating is greater than 3
+            given by these students
+            """
+
+
+class GroupBy_query(Query):
+    
+    @property
+    def sql(self):
+        return """  SELECT year, term, max(grade)
+                    FROM studentHistory
+                    GROUP BY year, term
+                    HAVING avg(grade) > 3
+               """
+    
+    @property
+    def graph(self):
+        if not GroupBy_query._graph:
+            # Relation
+            studentHistory = Relation("StudentHistory", "student history")
+
+            # Attribute
+            year_prj = Attribute("year")
+            year_grp = Attribute("year")
+            term_prj = Attribute("term")
+            term_grp = Attribute("term")
+            grade1 = Attribute("grade")
+            grade2 = Attribute("grade")
+            avg = Function(FunctionType.Avg)
+            max = Function(FunctionType.Max)
+            v_3 = Value("3")
+
+            query_graph = Query_graph("group-by query")
+            query_graph.connect_membership(studentHistory, grade1)
+            query_graph.connect_transformation(max, grade1)
+            query_graph.connect_grouping(studentHistory, year_grp)
+            query_graph.connect_grouping(year_grp, term_grp)
+            query_graph.connect_membership(studentHistory, year_prj)
+            query_graph.connect_membership(studentHistory, term_prj)
+            query_graph.connect_having(studentHistory, grade2)
+            query_graph.connect_transformation(grade2, avg)
+            query_graph.connect_predicate(avg, v_3)
+            GroupBy_query._graph = query_graph
+        return GroupBy_query._graph
+
+
+    @property
+    def simplified_graph(self):
+        if not GroupBy_query._graph:
+            # Relation
+            studentHistory = Relation("StudentHistory", "student history")
+
+            # Attribute
+            year_prj = Attribute("year_p", "year")
+            year_grp = Attribute("year_g", "year")
+            term_prj = Attribute("term_p", "term")
+            term_grp = Attribute("term_g", "term")
+            grade1 = Attribute("grade_p", "grade")
+            grade2 = Attribute("grade_h", "grade")
+            avg = Function(FunctionType.Avg)
+            max = Function(FunctionType.Max)
+            v_3 = Value("3")
+
+            query_graph = Query_graph("group-by query")
+            query_graph.connect_membership(studentHistory, grade1)
+            query_graph.connect_transformation(max, grade1)
+            query_graph.connect_grouping(studentHistory, year_grp)
+            query_graph.connect_grouping(year_grp, term_grp)
+            query_graph.connect_membership(studentHistory, year_prj)
+            query_graph.connect_membership(studentHistory, term_prj)
+            query_graph.connect_having(studentHistory, grade2)
+            query_graph.connect_transformation(grade2, avg)
+            query_graph.connect_predicate(avg, v_3, OperatorType.Greaterthan)
+            GroupBy_query._graph = query_graph
+        return GroupBy_query._graph
+    
+    @property
+    def nl(self):
+        return " "
+
+    @property
+    def BST_nl(self) -> str:
+        return """ """
+
+    @property
+    def MRP_nl(self) -> str:
+        return 'find maximum grade, year, and term of student history grouped by year and term of student history and consider only those groups whose average grade of student history is greater than 3.'
+
+    @property
+    def TMT_nl(self) -> str:
+        return """ """
+
 class Nested_query(Query):
     @property
     def sql(self):
@@ -269,7 +557,8 @@ class Nested_query(Query):
 
     @property
     def MRP_nl(self) -> str:
-        return """
+        return """SELECT s.name FROM student s WHERE NOT EXISTS (SELECT * FROM student s2 WHERE s2.GPA > s.GPA)
+                  Find the name of students where there are no students with a GPA bigger than the student.
             """
 
     @property
@@ -530,390 +819,9 @@ class Nested_query3(Query):
 
     @property
     def MRP_nl(self) -> str:
-        return """
-            """
+        return "Find the year and the sum of revenue of movie for each year where genre is romance and rating is in the average ratings of movies for each directors where year is 2020"
 
     @property
     def TMT_nl(self) -> str:
         return """
-            """
-
-
-class GroupBy_query(Query):
-    
-    @property
-    def sql(self):
-        return """  SELECT year, term, max(grade)
-                    FROM studentHistory
-                    GROUP BY year, term
-                    HAVING avg(grade) > 3
-               """
-    
-    @property
-    def graph(self):
-        if not GroupBy_query._graph:
-            # Relation
-            studentHistory = Relation("StudentHistory", "student history")
-
-            # Attribute
-            year_prj = Attribute("year")
-            year_grp = Attribute("year")
-            term_prj = Attribute("term")
-            term_grp = Attribute("term")
-            grade1 = Attribute("grade")
-            grade2 = Attribute("grade")
-            avg = Function(FunctionType.Avg)
-            max = Function(FunctionType.Max)
-            v_3 = Value("3")
-
-            query_graph = Query_graph("group-by query")
-            query_graph.connect_membership(studentHistory, grade1)
-            query_graph.connect_transformation(max, grade1)
-            query_graph.connect_grouping(studentHistory, year_grp)
-            query_graph.connect_grouping(year_grp, term_grp)
-            query_graph.connect_membership(studentHistory, year_prj)
-            query_graph.connect_membership(studentHistory, term_prj)
-            query_graph.connect_having(studentHistory, grade2)
-            query_graph.connect_transformation(grade2, avg)
-            query_graph.connect_predicate(avg, v_3)
-            GroupBy_query._graph = query_graph
-        return GroupBy_query._graph
-
-
-    @property
-    def simplified_graph(self):
-        if not GroupBy_query._graph:
-            # Relation
-            studentHistory = Relation("StudentHistory", "student history")
-
-            # Attribute
-            year_prj = Attribute("year_p", "year")
-            year_grp = Attribute("year_g", "year")
-            term_prj = Attribute("term_p", "term")
-            term_grp = Attribute("term_g", "term")
-            grade1 = Attribute("grade_p", "grade")
-            grade2 = Attribute("grade_h", "grade")
-            avg = Function(FunctionType.Avg)
-            max = Function(FunctionType.Max)
-            v_3 = Value("3")
-
-            query_graph = Query_graph("group-by query")
-            query_graph.connect_membership(studentHistory, grade1)
-            query_graph.connect_transformation(max, grade1)
-            query_graph.connect_grouping(studentHistory, year_grp)
-            query_graph.connect_grouping(year_grp, term_grp)
-            query_graph.connect_membership(studentHistory, year_prj)
-            query_graph.connect_membership(studentHistory, term_prj)
-            query_graph.connect_having(studentHistory, grade2)
-            query_graph.connect_transformation(grade2, avg)
-            query_graph.connect_predicate(avg, v_3, OperatorType.Greaterthan)
-            GroupBy_query._graph = query_graph
-        return GroupBy_query._graph
-    
-    @property
-    def nl(self):
-        return ""
-
-    @property
-    def BST_nl(self) -> str:
-        return """
-            """
-
-    @property
-    def MRP_nl(self) -> str:
-        return """
-            """
-
-    @property
-    def TMT_nl(self) -> str:
-        return """
-            """
-            
-class GroupBy_query(Query):
-    
-    @property
-    def sql(self):
-        return """  SELECT year, term, max(grade)
-                    FROM studentHistory
-                    GROUP BY year, term
-                    HAVING avg(grade) > 3
-               """
-    
-    @property
-    def graph(self):
-        if not GroupBy_query._graph:
-            # Relation
-            studentHistory = Relation("StudentHistory", "student history")
-
-            # Attribute
-            year_prj = Attribute("year")
-            year_grp = Attribute("year")
-            term_prj = Attribute("term")
-            term_grp = Attribute("term")
-            grade1 = Attribute("grade")
-            grade2 = Attribute("grade")
-            avg = Function(FunctionType.Avg)
-            max = Function(FunctionType.Max)
-            v_3 = Value("3")
-
-            query_graph = Query_graph("group-by query")
-            query_graph.connect_membership(studentHistory, grade1)
-            query_graph.connect_transformation(max, grade1)
-            query_graph.connect_grouping(studentHistory, year_grp)
-            query_graph.connect_grouping(year_grp, term_grp)
-            query_graph.connect_membership(studentHistory, year_prj)
-            query_graph.connect_membership(studentHistory, term_prj)
-            query_graph.connect_having(studentHistory, grade2)
-            query_graph.connect_transformation(grade2, avg)
-            query_graph.connect_predicate(avg, v_3)
-            GroupBy_query._graph = query_graph
-        return GroupBy_query._graph
-
-
-    @property
-    def simplified_graph(self):
-        if not GroupBy_query._graph:
-            # Relation
-            studentHistory = Relation("StudentHistory", "student history")
-            
-            # Attribute
-            year_prj = Attribute("year_p", "year")
-            year_grp = Attribute("year_g", "year")
-            term_prj = Attribute("term_p", "term")
-            term_grp = Attribute("term_g", "term")
-            grade1 = Attribute("grade_p", "grade")
-            grade2 = Attribute("grade_h", "grade")
-            avg = Function(FunctionType.Avg)
-            max = Function(FunctionType.Max)
-            v_3 = Value("3")
-
-            query_graph = Query_graph("group-by query")
-            query_graph.connect_membership(studentHistory, grade1)
-            query_graph.connect_transformation(max, grade1)
-            query_graph.connect_grouping(studentHistory, year_grp)
-            query_graph.connect_grouping(year_grp, term_grp)
-            query_graph.connect_membership(studentHistory, year_prj)
-            query_graph.connect_membership(studentHistory, term_prj)
-            query_graph.connect_having(studentHistory, grade2)
-            query_graph.connect_transformation(grade2, avg)
-            query_graph.connect_predicate(avg, v_3, OperatorType.Greaterthan)
-            GroupBy_query._graph = query_graph
-        return GroupBy_query._graph
-    
-    @property
-    def nl(self):
-        return ""
-
-    @property
-    def BST_nl(self) -> str:
-        return """
-            """
-
-    @property
-    def MRP_nl(self) -> str:
-        return """
-            """
-
-    @property
-    def TMT_nl(self) -> str:
-        return """
-            """
-
-class SPJ_query(Query):
-    @property
-    def sql(self):
-        return """
-            SELECT s.name, s.GPA, c.title, i.name, co.text
-            FROM students s, comments co, student history h, courses c, departments d, coursesched cs, instructors i
-            WHERE s.suid = co.suid AND
-                s.suid = h.suid AND
-                h.courseid = c.courseid AND
-                c.depid = d.depid AND
-                c.courseid = cs.courseid AND
-                cs.instrid = i.instrid AND
-                s.class = 2011 AND
-                co.rating > 3 AND
-                cs.term = 'spring' AND
-                d.name = 'CS'
-            """
-    
-    @property
-    def graph(self):
-        if not SPJ_query._graph:
-            # Relation
-            comments = Relation("Comments")
-            students = Relation("Students")
-            studentHistory = Relation("StudentHistory")
-            departments = Relation("Departments")
-            courses = Relation("Courses")
-            courseSched = Relation("CourseSched")
-            instructors = Relation("Instructors")
-
-            # Attribute
-            comments_text = Attribute("Text")
-            comments_rating = Attribute("Rating")
-            comments_stuid = Attribute("comments.Stuid", "StuID")
-
-            students_name = Attribute("Student.Name", "name")
-            students_gpa = Attribute("Student.GPA", "GPA")
-            students_class = Attribute("Student.Class", "Class")
-            students_stuid1 = Attribute("stuID1", "stuID")
-            students_stuid2 = Attribute("stuID2", "stuID")
-
-            studentHistory_stuid = Attribute("stuID3", "StuID")
-            studentHistory_courseid = Attribute("studenthistory.CourseID", "CourseID")
-
-            courses_courseid1 = Attribute("coursese.CourseID1", "CourseID")
-            courses_courseid2 = Attribute("coursese.CourseID2", "CourseID")
-            courses_title = Attribute("Title")
-            courses_depid = Attribute("courses.DepID", "DepID")
-
-            departments_depid = Attribute("DepID")
-            departments_name = Attribute("deparment.Name", "Name")
-
-            courseSched_courseid = Attribute("courseSched.CourseID", "CourseID")
-            courseSched_instrid = Attribute("courseSched.InstrID", "InstrID")
-            courseSched_term = Attribute("Term")
-
-            instructors_name = Attribute("instructors.Name", "Name")
-            instructors_instrid = Attribute("instructors.InstrID", "InstrID")
-
-            # Values
-            v_3 = Value("3")
-            v_2011 = Value("2011")
-            v_cs = Value("CS")
-            v_spring = Value("Spring")
-
-            query_graph = Query_graph("SPJ query")
-            query_graph.connect_membership(comments, comments_text)
-            query_graph.connect_selection(comments, comments_rating)
-            query_graph.connect_predicate(comments_rating, v_3)
-
-            query_graph.connect_join(comments, comments_stuid, students_stuid1, students)
-            
-            query_graph.connect_membership(students, students_name)
-            query_graph.connect_membership(students, students_gpa)
-            query_graph.connect_selection(students, students_class)
-            query_graph.connect_predicate(students_class, v_2011)
-
-            query_graph.connect_join(students, students_stuid2, studentHistory_stuid, studentHistory)
-            query_graph.connect_join(studentHistory, studentHistory_courseid, courses_courseid1, courses)
-            query_graph.connect_membership(courses, courses_title)
-            
-            query_graph.connect_join(courses, courses_depid, departments_depid, departments)
-            query_graph.connect_selection(departments, departments_name)
-            query_graph.connect_predicate(departments_name, v_cs)
-
-            query_graph.connect_join(courses, courses_courseid2, courseSched_courseid, courseSched)
-            query_graph.connect_selection(courseSched, courseSched_term)
-            query_graph.connect_predicate(courseSched_term, v_spring)
-            
-            query_graph.connect_join(courseSched, courseSched_instrid, instructors_instrid, instructors)
-            query_graph.connect_membership(instructors, instructors_name)
-            SPJ_query._graph = query_graph
-        return SPJ_query._graph
-
-    @property
-    def simplified_graph(self):
-        if not SPJ_query._graph:
-            # Relation
-            comments = Relation("Comments", "comments")
-            students = Relation("Students", "students")
-            studentHistory = Relation("StudentHistory", "")
-            departments = Relation("Departments", "departments")
-            courses = Relation("Courses", "courses")
-            courseSched = Relation("CourseSched", "")
-            instructors = Relation("Instructors", "instructors")
-
-            # Attribute
-            comments_text = Attribute("Text", "description")
-            comments_rating = Attribute("Rating")
-            students_name = Attribute("students.Name", "name")
-            students_gpa = Attribute("GPA", "gpa")
-            students_class = Attribute("students.class", "class")
-            courses_title = Attribute("Title", "title")
-            departments_name = Attribute("departments.Name", "name")
-            courseSched_term = Attribute("Term", "term")
-            instructors_name = Attribute("instructors.Name", "name")
-
-            # Values
-            v_3 = Value("3")
-            v_2011 = Value("2011")
-            v_cs = Value("CS")
-            v_spring = Value("Spring", "spring")
-
-            query_graph = Query_graph("SPJ query")
-            query_graph.connect_membership(comments, comments_text)
-            query_graph.connect_selection(comments, comments_rating)
-            query_graph.connect_predicate(comments_rating, v_3, operator=OperatorType.Greaterthan)
-
-            # query_graph.connect(comments, students, "are given by", "gave")
-            query_graph.connect_simplified_join(comments, students, "are given by", "gave")
-            
-            query_graph.connect_membership(students, students_gpa)
-            query_graph.connect_membership(students, students_name)
-            query_graph.connect_selection(students, students_class)
-            query_graph.connect_predicate(students_class, v_2011)
-            
-            query_graph.connect_simplified_join(courses, courseSched, "are taught by", "")
-            # query_graph.connect(courses, courseSched)
-            query_graph.connect_selection(courseSched, courseSched_term)
-            query_graph.connect_predicate(courseSched_term, v_spring)
-
-            query_graph.connect_simplified_join(courseSched, instructors, "", "teach")
-            # query_graph.connect(courseSched, instructors)
-            query_graph.connect_membership(instructors, instructors_name)
-            
-            query_graph.connect_simplified_join(courses, departments, "are offered", "offer")
-            query_graph.connect_selection(departments, departments_name)
-            query_graph.connect_predicate(departments_name, v_cs)
-
-            query_graph.connect_simplified_join(students, studentHistory, "have taken", "")
-            # query_graph.connect(students, studentHistory)
-            query_graph.connect_simplified_join(studentHistory, courses, "", "taken by")
-            # query_graph.connect(studentHistory, courses)
-            query_graph.connect_membership(courses, courses_title)
-            
-            SPJ_query._graph = query_graph
-        return SPJ_query._graph
-
-    @property
-    def specific_templates(self):
-        if not hasattr(self, "_specific_templates"):
-            self._specific_templates = [Template_S_to_I(self.graph), Template_C_to_Val(self.graph), Template_I_to_C(self.graph)]
-        return self._specific_templates
-
-    @property
-    def templates(self):
-        return self.specific_templates + self.generic_templates
-    
-    @property
-    def template_set(self):
-        raise NotImplementedError("Need to add gold for template set")
-        return None
-
-    @property
-    def nl(self):
-        return self.BST_nl
-
-    @property
-    def BST_nl(self) -> str:
-        return """
-            Find the titles of course, the names and gpas of student, the descriptions of comments, and the names of instructor, for course taken by , 
-            for associated with student, for student gave comments, for course are offered department and are taught by, 
-            and for teach instructor. Consider only student whose class is 2011, 
-            comments whose rating is greater than 3, department whose name is cs, and whose term is spring.
-            """
-
-    @property
-    def MRP_nl(self) -> str:
-        return "find title of courses in which courses are offered departments and name of departments is cs, gpa and name of students in which students have taken courses and class of students is 2011, description of comments in which comments are given by students and rating of comments is greater than 3, name of instructors in which instructors teach courses and term is spring."
-
-    @property
-    def TMT_nl(self) -> str:
-        return """
-            Find the gpa and name of students whose class is 2011 and have been in classes of instructors 
-            and find the name of these instructors, whose lectures on courses are in spring and find the
-            title of these CS courses and the description of comments whose rating is greater than 3
-            given by these students
             """
