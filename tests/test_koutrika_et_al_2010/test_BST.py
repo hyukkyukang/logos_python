@@ -1,6 +1,6 @@
 import unittest
 from src.algorithm.BST import BST
-from tests.test_koutrika_et_al_2010.utils import SPJ_query, GroupBy_query, Nested_query, compare_string_without_newline
+# from tests.test_koutrika_et_al_2010.utils import SPJ_query, GroupBy_query, Nested_query, compare_string_without_newline
 
 
 class Test_BST(unittest.TestCase):

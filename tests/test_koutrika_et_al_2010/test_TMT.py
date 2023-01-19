@@ -1,6 +1,6 @@
 import unittest
 from src.algorithm.TMT import TMT
-from tests.test_koutrika_et_al_2010.utils import SPJ_query, GroupBy_query, Nested_query
+# from tests.test_koutrika_et_al_2010.utils import SPJ_query, GroupBy_query, Nested_query
 
 class Test_TMT(unittest.TestCase):
     def __init__(self, *args, **kwargs):
