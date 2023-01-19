@@ -325,7 +325,7 @@ class SPJ_query(Query):
             query_graph = Query_graph("SPJ query")
             query_graph.connect_membership(comments, comments_text)
             query_graph.connect_selection(comments, comments_rating)
-            query_graph.connect_predicate(comments_rating, v_3, operator=OperatorType.Greaterthan)
+            query_graph.connect_predicate(comments_rating, v_3, operator=OperatorType.GreaterThan)
 
             # query_graph.connect(comments, students, "are given by", "gave")
             query_graph.connect_simplified_join(comments, students, "are given by", "gave")
@@ -466,7 +466,7 @@ class GroupBy_query(Query):
             query_graph.connect_membership(studentHistory, term_prj)
             query_graph.connect_having(studentHistory, grade2)
             query_graph.connect_transformation(grade2, avg)
-            query_graph.connect_predicate(avg, v_3, OperatorType.Greaterthan)
+            query_graph.connect_predicate(avg, v_3, OperatorType.GreaterThan)
             GroupBy_query._graph = query_graph
         return GroupBy_query._graph
     
@@ -480,13 +480,13 @@ class GroupBy_query(Query):
 
     @property
     def MRP_nl(self) -> str:
-        return 'find maximum grade, year, and term of student history grouped by year and term of student history and consider only those groups whose average grade of student history is greater than 3.'
+        return 'find maximum grade, year, and term of student history for each year and term of student history, considering only those groups whose average grade of student history is greater than 3.'
 
     @property
     def TMT_nl(self) -> str:
         return """ """
 
-class Nested_query(Query):
+class Nested_with_correlation_query(Query):
     @property
     def sql(self):
         return """
@@ -495,7 +495,7 @@ class Nested_query(Query):
 
     @property
     def graph(self):
-        if not Nested_query._graph:
+        if not Nested_with_correlation_query._graph:
             # Relation
             students = Relation("students", "students")
             students2 = Relation("students", "students","S2")
@@ -515,13 +515,13 @@ class Nested_query(Query):
             query_graph.connect_selection(students, star_node1)
             query_graph.connect_predicate(star_node1, star_node2, OperatorType.NotExists)
             query_graph.connect_selection(star_node2, students2)
-            query_graph.connect_predicate(gpa2, gpa1, OperatorType.Greaterthan)
-            Nested_query._graph = query_graph
-        return Nested_query._graph
+            query_graph.connect_predicate(gpa2, gpa1, OperatorType.GreaterThan)
+            Nested_with_correlation_query._graph = query_graph
+        return Nested_with_correlation_query._graph
 
     @property
     def simplified_graph(self):
-        if not Nested_query._graph:
+        if not Nested_with_correlation_query._graph:
             # Relation
             students = Relation("students_out", "students", "S1")
             students2 = Relation("students_in", "students", "S2")
@@ -530,11 +530,11 @@ class Nested_query(Query):
             name = Attribute("name", "name")
             gpa1 = Attribute("GPA_out", "gpa")
             gpa2 = Attribute("GPA_in", "gpa")
-            star_node1 = Attribute("*_out", "*")
-            star_node2 = Attribute("*_in", "*")
+            star_node1 = Attribute("*_out", " ")
+            star_node2 = Attribute("*_in", " ")
 
             # Query graph
-            query_graph = Query_graph("nested query")
+            query_graph = Query_graph("Correlated nested query")
             query_graph.connect_membership(students, name)
             query_graph.connect_selection(gpa1, students)
             query_graph.connect_selection(students2, gpa2)
@@ -542,9 +542,9 @@ class Nested_query(Query):
             query_graph.connect_predicate(star_node1, star_node2, OperatorType.NotExists)
             query_graph.connect_membership(students2, star_node2)
             # query_graph.connect_selection(star_node2, students2)
-            query_graph.connect_predicate(gpa2, gpa1, OperatorType.Greaterthan)
-            Nested_query._graph = query_graph
-        return Nested_query._graph
+            query_graph.connect_predicate(gpa2, gpa1, OperatorType.GreaterThan)
+            Nested_with_correlation_query._graph = query_graph
+        return Nested_with_correlation_query._graph
 
     @property
     def nl(self):
@@ -557,16 +557,14 @@ class Nested_query(Query):
 
     @property
     def MRP_nl(self) -> str:
-        return """SELECT s.name FROM student s WHERE NOT EXISTS (SELECT * FROM student s2 WHERE s2.GPA > s.GPA)
-                  Find the name of students where there are no students with a GPA bigger than the student.
-            """
+        return "find name of students where there not exists students where gpa of students is greater than gpa of those students."
 
     @property
     def TMT_nl(self) -> str:
         return """
             """
 
-class Nested_query2(Query):
+class Nested_with_multisublink_query(Query):
     @property
     def sql(self):
         return """
@@ -585,7 +583,7 @@ class Nested_query2(Query):
 
     @property
     def graph(self):
-        if not Nested_query2._graph:
+        if not Nested_with_multisublink_query._graph:
             # Relation
             movie1 = Relation("movie1", "movie", "m1")
             movie2 = Relation("movie2", "movie", "m2")
@@ -616,8 +614,8 @@ class Nested_query2(Query):
             last_name = Attribute("last_name", "last_name")
 
             # Function nodes
-            avg = Function(FunctionType.Avg)
-            max = Function(FunctionType.Max)
+            f_avg = Function(FunctionType.Avg)
+            f_max = Function(FunctionType.Max)
             
             # Values
             v_first_name = Value("Spielberg")
@@ -629,10 +627,10 @@ class Nested_query2(Query):
             query_graph.connect_membership(movie1, m1_id1)
             query_graph.connect_join(movie1, m1_id2, r1_stars1, rating1)
             query_graph.connect_selection(rating1, r1_stars1)
-            query_graph.connect_predicate(r1_stars1, max, OperatorType.Lessthan)
+            query_graph.connect_predicate(r1_stars1, f_max, OperatorType.LessThan)
 
             # For nested query1
-            query_graph.connect_transformation(r2_stars, max)
+            query_graph.connect_transformation(r2_stars, f_max)
             query_graph.connect_membership(rating2, r2_stars)
             query_graph.connect_join(rating2, r2_mov_id, m2_id1, movie2)
             
@@ -656,22 +654,22 @@ class Nested_query2(Query):
             # For grouping and having
             query_graph.connect_grouping(movie1, m1_id5)
             query_graph.connect_having(rating1, r1_stars2)
-            query_graph.connect_transformation(r1_stars2, avg)
-            query_graph.connect_predicate(avg, v_3, OperatorType.GEq)
+            query_graph.connect_transformation(r1_stars2, f_avg)
+            query_graph.connect_predicate(f_avg, v_3, OperatorType.GEq)
             
-            Nested_query2._graph = query_graph
-        return Nested_query2._graph
+            Nested_with_multisublink_query._graph = query_graph
+        return Nested_with_multisublink_query._graph
 
     @property
     def simplified_graph(self):
-        if not Nested_query2._graph:
+        if not Nested_with_multisublink_query._graph:
             # Relation
             movie1 = Relation("movie1", "movie", "m1", is_primary=True)
             movie2 = Relation("movie2", "movie", "m2")
             movie3 = Relation("movie3", "movie", "m3")
             rating1 = Relation("rating1", "rating", "r1")
             rating2 = Relation("rating2", "rating", "r2")
-            direction = Relation("direction", "direction", "md")
+            direction = Relation("direction", " ", "md")
             director = Relation("director", "director", "d")
 
             # Attribute
@@ -679,17 +677,17 @@ class Nested_query2(Query):
             m1_id3 = Attribute("m1_id3", "id")
             m1_id4 = Attribute("m1_id4", "id")
             m1_id5 = Attribute("m1_id5", "id")
-            r1_stars1 = Attribute("r1_stars1", "stars")
-            r1_stars2 = Attribute("r1_stars2", "stars")
-            r2_stars = Attribute("r2_stars", "stars")
+            r1_stars1 = Attribute("r1_stars1", " ")
+            r1_stars2 = Attribute("r1_stars2", " ")
+            r2_stars = Attribute("r2_stars", "")
             m2_id2 = Attribute("m2_id2", "id")
             m3_id1 = Attribute("m3_id1", "id")
             first_name = Attribute("first_name", "first_name")
             last_name = Attribute("last_name", "last_name")
 
             # Function nodes
-            avg = Function(FunctionType.Avg)
-            max = Function(FunctionType.Max)
+            f_avg = Function(FunctionType.Avg)
+            f_max = Function(FunctionType.Max)
             
             # Values
             v_first_name = Value("Spielberg")
@@ -697,32 +695,31 @@ class Nested_query2(Query):
             v_3 = Value("3")
 
             # Query graph
-            query_graph = Query_graph("nested query2")
+            query_graph = Query_graph("Multiple sublink nested query")
             query_graph.connect_membership(movie1, m1_id1)
-            query_graph.connect_simplified_join(movie1, rating1, "", "of")
-            
-            query_graph.connect_selection(rating1, r1_stars1)
-            query_graph.connect_predicate(r1_stars1, max, OperatorType.Lessthan)
+            query_graph.connect_simplified_join(movie1, rating1, "", "belongs to")
 
+            query_graph.connect_selection(rating1, r1_stars1)
+            query_graph.connect_predicate(r1_stars1, f_max, OperatorType.LessThan)
 
             # For nested query1
-            query_graph.connect_transformation(max, r2_stars)
+            query_graph.connect_transformation(f_max, r2_stars)
             query_graph.connect_membership(rating2, r2_stars)
-            query_graph.connect_simplified_join(rating2, movie2, "of", "")
-            
+            query_graph.connect_simplified_join(rating2, movie2, "belongs to", "")
+
             # For correlation
-            query_graph.connect_selection(m1_id3, movie1)
-            query_graph.connect_predicate(m2_id2, m1_id3)
             query_graph.connect_selection(movie2, m2_id2)
-            
+            query_graph.connect_predicate(m2_id2, m1_id3)
+            query_graph.connect_selection(m1_id3, movie1)
+
             # For second where clause
             query_graph.connect_selection(movie1, m1_id4)
             query_graph.connect_predicate(m1_id4, m3_id1, OperatorType.In)
             
             # For nested query2
             query_graph.connect_membership(movie3, m3_id1)
-            query_graph.connect_simplified_join(movie3, direction, "", "of")
-            query_graph.connect_simplified_join(direction, director, "of", "")
+            query_graph.connect_simplified_join(movie3, direction)
+            query_graph.connect_simplified_join(direction, director)
             query_graph.connect_selection(director, first_name)
             query_graph.connect_predicate(first_name, v_first_name)
             query_graph.connect_selection(director, last_name)
@@ -731,10 +728,10 @@ class Nested_query2(Query):
             # For grouping and having
             query_graph.connect_grouping(movie1, m1_id5)
             query_graph.connect_having(rating1, r1_stars2)
-            query_graph.connect_transformation(r1_stars2, avg)
-            query_graph.connect_predicate(avg, v_3, OperatorType.GEq)
-            Nested_query2._graph = query_graph
-        return Nested_query2._graph
+            query_graph.connect_transformation(r1_stars2, f_avg)
+            query_graph.connect_predicate(f_avg, v_3, OperatorType.GEq)
+            Nested_with_multisublink_query._graph = query_graph
+        return Nested_with_multisublink_query._graph
 
     @property
     def nl(self):
@@ -747,21 +744,20 @@ class Nested_query2(Query):
 
     @property
     def MRP_nl(self) -> str:
-        return """
-            """
+        return "find id of movie for each id of movie, considering only those groups whose average rating is greater than or equal to 3, where id of movie is in id of movie where first_name of director is spielberg and last_name of director is steven and rating is less than maximum rating in which rating belongs to movie of the same id."
 
     @property
     def TMT_nl(self) -> str:
         return """
             """
 
-class Nested_query3(Query):
+class Nested_with_groupby_query(Query):
     @property
     def sql(self):
         return """
-            SELECT id FROM movie 
+            SELECT year, sum(revenue) FROM movie 
             WHERE genre = 'romance'
-            AND rating = (SELECT AVG(rating) FROM movie
+            AND rating IN (SELECT AVG(rating) FROM movie
                             WHERE year = 2020
                             GROUP BY directors)
             GROUP BY year
@@ -773,40 +769,46 @@ class Nested_query3(Query):
 
     @property
     def simplified_graph(self):
-        if not Nested_query3._graph:
+        if not Nested_with_groupby_query._graph:
             # Relation
             movie1 = Relation("movie1", "movie", "m1", is_primary=True)
             movie2 = Relation("movie2", "movie", "m2")
 
             # Attribute
-            id = Attribute("id", "id")
+            year1 = Attribute("year1", "year")
+            revenue = Attribute("revenue", "revenue")
             genre = Attribute("genre", "genre")
             rating1 = Attribute("rating1", "rating")
             rating2 = Attribute("rating2", "rating")
-            year1 = Attribute("year1", "year")
+            year2 = Attribute("year2", "year")
             director = Attribute("director", "director")
-            year = Attribute("year2", "year")
-            
+            year3 = Attribute("year3", "year")
+
             # Function
-            avg = Function(FunctionType.Avg)
-            
+            f_sum = Function(FunctionType.Sum)
+            f_avg = Function(FunctionType.Avg)
+
             # Value
             v_2020 = Value("2020")
+            v_romance = Value("romance")
 
             # Query graph
-            query_graph = Query_graph("nested query3")
-            query_graph.connect_membership(movie1, id)
+            query_graph = Query_graph("Nested query with group by")
+            query_graph.connect_membership(movie1, year1)
+            query_graph.connect_membership(movie1, revenue)
+            query_graph.connect_transformation(revenue, f_sum)
             query_graph.connect_selection(movie1, genre)
-            query_graph.connect_predicate(genre, Value("romance"))
+            query_graph.connect_predicate(genre, v_romance)
             query_graph.connect_selection(movie1, rating1)
-            query_graph.connect_predicate(rating1, avg, OperatorType.In)
-            query_graph.connect_transformation(avg, rating2)
+            query_graph.connect_predicate(rating1, f_avg, OperatorType.In)
+            query_graph.connect_transformation(f_avg, rating2)
             query_graph.connect_membership(movie2, rating2)
-            query_graph.connect_selection(movie2, year1)
+            query_graph.connect_selection(movie2, year2)
+            query_graph.connect_predicate(year2, v_2020)
             query_graph.connect_grouping(movie2, director)
-            query_graph.connect_grouping(movie1, year)
-            Nested_query3._graph = query_graph
-        return Nested_query3._graph
+            query_graph.connect_grouping(movie1, year3)
+            Nested_with_groupby_query._graph = query_graph
+        return Nested_with_groupby_query._graph
 
     @property
     def nl(self):
@@ -819,7 +821,88 @@ class Nested_query3(Query):
 
     @property
     def MRP_nl(self) -> str:
-        return "Find the year and the sum of revenue of movie for each year where genre is romance and rating is in the average ratings of movies for each directors where year is 2020"
+        return "find year and revenue of movie for each year of movie where genre of movie is romance and rating of movie is in average rating of movie for each director of movie where year of movie is 2020."
+
+    @property
+    def TMT_nl(self) -> str:
+        return """
+            """
+
+class Nested_with_multilevel_query(Query):
+    @property
+    def sql(self):
+        return """SELECT id, name FROM movie WHERE 
+                genre IN (SELECT genre FROM movie 
+                        WHERE director = 'Spielberg' AND 
+                        revenu < (SELECT Max(revenu) FROM movie WHERE director = 'Nolan')
+                )"""
+
+    @property
+    def graph(self):
+        raise NotImplementedError("Graph of Nested query 3 is not implemented yet")
+
+    @property
+    def simplified_graph(self):
+        if not Nested_with_multilevel_query._graph:
+            # Relations
+            movie1 = Relation("movie1", "movie", "m1", is_primary=True)
+            movie2 = Relation("movie2", "movie", "m2")
+            movie3 = Relation("movie3", "movie", "m3")
+            
+            # Attributes
+            id = Attribute("id", "id")
+            name = Attribute("name", "name")
+            genre1 = Attribute("genre1", "genre")
+            genre2 = Attribute("genre2", "genre")
+            director1 = Attribute("director1", "director")
+            revenue1 = Attribute("revenue1", "revenue")
+            revenue2 = Attribute("revenue2", "revenue")
+            director2 = Attribute("director2", "director")
+            
+            # Functions
+            f_max = Function(FunctionType.Max)
+            
+            # Values
+            v_spielberg = Value("Spielberg")
+            v_nolan = Value("Nolan")
+            
+            # Query graph
+            query_graph = Query_graph("Multi-level nested query")
+            query_graph.connect_membership(movie1, id)
+            query_graph.connect_membership(movie1, name)
+            query_graph.connect_selection(movie1, genre1)
+            
+            query_graph.connect_predicate(genre1, genre2, OperatorType.In)
+            
+            # Level 1 nested query
+            query_graph.connect_membership(movie2, genre2)
+            query_graph.connect_selection(movie2, director1)
+            query_graph.connect_predicate(director1, v_spielberg)
+            query_graph.connect_selection(movie2, revenue1)
+            
+            query_graph.connect_predicate(revenue1, f_max, OperatorType.LessThan)
+            
+            # Level 2 nested query
+            query_graph.connect_transformation(f_max, revenue2)
+            query_graph.connect_membership(movie3, revenue2)
+            query_graph.connect_selection(movie3, director2)
+            query_graph.connect_predicate(director2, v_nolan)
+            
+            Nested_with_multilevel_query._graph = query_graph
+        return Nested_with_multilevel_query._graph
+
+    @property
+    def nl(self):
+        return ""
+
+    @property
+    def BST_nl(self) -> str:
+        return """
+            """
+
+    @property
+    def MRP_nl(self) -> str:
+        return "Find id and name of movie where genre of movie is in genre of movie where director of movie is spielberg and revenue of movie is less than maximum revenue of movie where director of movie is nolan."
 
     @property
     def TMT_nl(self) -> str:

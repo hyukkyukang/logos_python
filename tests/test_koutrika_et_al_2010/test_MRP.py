@@ -1,6 +1,6 @@
 import unittest
 from src.algorithm.MRP import MRP
-from tests.test_koutrika_et_al_2010.utils import SPJ_query, GroupBy_query, Nested_query, Nested_query2, Nested_query3
+from tests.test_koutrika_et_al_2010.utils import SPJ_query, GroupBy_query, Nested_with_correlation_query, Nested_with_multisublink_query, Nested_with_groupby_query, Nested_with_multilevel_query
 
 
 class Test_MRP(unittest.TestCase):
@@ -23,15 +23,17 @@ class Test_MRP(unittest.TestCase):
     def test_group(self):
         self._test_query(GroupBy_query(), "GroupBy")
 
-    def test_nested1(self):
-        self._test_query(Nested_query(), "Nested1")
+    def test_nested_with_correlation(self):
+        self._test_query(Nested_with_correlation_query(), "correlation")
 
-    def test_nested2(self):
-        self._test_query(Nested_query2(), "Nested2")
+    def test_nested_with_multi_sublink(self):
+        self._test_query(Nested_with_multisublink_query(), "multiple-sublink")
 
-    def test_nested3(self):
-        self._test_query(Nested_query3(), "Nested3")
+    def test_nested_with_groupby(self):
+        self._test_query(Nested_with_groupby_query(), "nested-with-groupby")
 
+    def test_nested_with_multi_levl(self):
+        self._test_query(Nested_with_multilevel_query(), "multi-level-nested")
 
 if __name__ == "__main__":
      unittest.main()

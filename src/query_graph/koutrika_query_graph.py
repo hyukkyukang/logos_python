@@ -14,8 +14,8 @@ class OrderingType(IntEnum):
 
 
 class OperatorType(IntEnum):
-    Greaterthan = 0
-    Lessthan = 1
+    GreaterThan = 0
+    LessThan = 1
     Equal = 2
     GEq = 3
     LEq = 4
@@ -28,7 +28,7 @@ class OperatorType(IntEnum):
     NotEqual = 11
 OperatorNames = [">", "<", "=", ">=", "<=", "In", "Not In", "Exists", "Not Exists", "Like", "Not Like", "!="]
 OperatorLabels = ["is greater than", "is less than", "is", "is greater than or equal to", 
-                "is less than or equal to", "is in", "is not in", "exists", "not exists", "like", "not like", "not equal to"]
+                "is less than or equal to", "is in", "is not in", "there exists", "there not exists", "like", "not like", "not equal to"]
 
 class FunctionType(IntEnum):
     Min =0 
@@ -242,6 +242,7 @@ class Query_graph(nx.DiGraph):
                 2. RP is a branching point, i.e., a relation that connects to more than one relation through paths directed from this relation to the other relations
                 3. RP is a leaf relation, i.e., a relation with no outgoing paths to other relations on the query graph (This is for query with nesting)
                 4. the minimum distance of RP from the closest reference point is greater than a pre-defined threshold
+                5. connecing to a nested query
         """
         def shortest_path_length(node1, node2):
             if self.has_path(node1, node2):
@@ -283,6 +284,11 @@ class Query_graph(nx.DiGraph):
             if min_distance > self.reference_point_distance_threshold:
                 # Add this relation as a reference point
                 reference_points.append(r1)                
+
+        # condition 5
+        for r1 in self.relations:
+            if r1.name == "rating1":
+                reference_points.append(r1)
 
         return reference_points
 
@@ -453,7 +459,7 @@ class Query_graph(nx.DiGraph):
         leaf_nodes = []
         for dst in self.get_out_going_nodes(node):
             if dst not in visited_nodes:
-                if type(dst) == Relation and self.number_of_non_visited_relation_nodes(dst, visited_nodes) == 0:
+                if type(dst) == Relation and self.number_of_non_visited_relation_nodes(dst, copy.deepcopy(visited_nodes)) == 0:
                     leaf_nodes.append(dst)
                 else:
                     leaf_nodes.extend(self.get_leaf_nodes(dst, visited_nodes))
@@ -516,7 +522,7 @@ class Query_graph(nx.DiGraph):
     
     def has_path(self, src: Node, dst: Node) -> bool:
         return nx.has_path(self, src, dst)
-    
+
     def has_membership_edge(self, node: Node) -> bool:
         return any([type(self.get_edge(src, dst)) == Membership for src, dst in self.in_edges(node)])
 
