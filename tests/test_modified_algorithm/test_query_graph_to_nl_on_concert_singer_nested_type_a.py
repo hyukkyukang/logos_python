@@ -2,11 +2,11 @@ import copy
 import unittest
 import networkx as nx
 # Load template class
-from src.pylogos.template.template import Template_instance, Generic_template, Specific_template, template_selection, template_composition
+from pylogos.template.template import Template_instance, Generic_template, Specific_template, template_selection, template_composition
 # Load template files
-from src.pylogos.template.generic_template import generic_templates
-from src.pylogos.template.specific_template_student import specific_templates
-from src.pylogos.template.schema_templates.schema_template_concert_singer import schema_template
+from pylogos.template.generic_template import generic_templates
+from pylogos.template.specific_template_student import specific_templates
+from pylogos.template.schema_templates.schema_template_concert_singer import schema_template
 from tests.test_modified_algorithm.utils_hjkim import load_graphs
 
 from query_graph import Relation, Projection

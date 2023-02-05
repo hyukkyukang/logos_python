@@ -1,5 +1,5 @@
-from src.pylogos.query_graph import OperatorType, AggregationType
-from src.pylogos.query_graph import Relation, Attribute, Value, Function, Query_graph
+from pylogos.query_graph import Relation, Attribute, Value, Function, Query_graph
+from pylogos.query_graph import OperatorType, AggregationType
 # from SQL2Text.query_graph.queryGraph import Relation, Attribute, Value, Function, Query_graph
 # from SQL2Text.query_graph.queryGraph import OperatorType, AggregationType
 

@@ -2,7 +2,7 @@
 # from SQL2Text.query_graph.queryGraph import Edge as E, Join, Operation as Op
 from query_graph import Relation as R, Attribute as A
 from query_graph import Edge as E, Join, Operation as Op
-from src.pylogos.query_graph.queryGraph import OperatorType
+from pylogos.query_graph.queryGraph import OperatorType
 
 r_student = R("student")
 a_s_stuid = A("student.stuID")

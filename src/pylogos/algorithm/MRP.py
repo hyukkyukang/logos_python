@@ -1,7 +1,7 @@
 import networkx as nx
 
-from src.pylogos.algorithm.string_builder import StringBuilder
-from src.pylogos.query_graph.koutrika_query_graph import (Attribute, Function,
+from pylogos.algorithm.string_builder import StringBuilder
+from pylogos.query_graph.koutrika_query_graph import (Attribute, Function,
                                                   Grouping, Having, Membership,
                                                   Node, Order, Predicate,
                                                   Query_graph, Relation,

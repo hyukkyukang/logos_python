@@ -2,7 +2,7 @@ import abc
 import copy
 import networkx as nx
 
-from src.pylogos.query_graph.koutrika_query_graph import OperatorType, Predicate, Membership, Selection, Edge, Node, Relation, Attribute, Value, Function
+from pylogos.query_graph.koutrika_query_graph import OperatorType, Predicate, Membership, Selection, Edge, Node, Relation, Attribute, Value, Function
 """
     - Label: NL to describe the conceptual meaning of a node or edge
         e.g.: l(node) -> str

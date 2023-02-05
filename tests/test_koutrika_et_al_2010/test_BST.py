@@ -1,5 +1,5 @@
 import unittest
-from src.pylogos.algorithm.BST import BST
+from pylogos.algorithm.BST import BST
 # from tests.test_koutrika_et_al_2010.utils import SPJ_query, GroupBy_query, Nested_query, compare_string_without_newline
 
 

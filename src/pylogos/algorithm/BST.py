@@ -1,4 +1,4 @@
-from src.pylogos.query_graph.koutrika_query_graph import Value, Selection, Membership
+from pylogos.query_graph.koutrika_query_graph import Value, Selection, Membership
 
 VAL_SEL = " whose "
 CONJ_SEL = " and "

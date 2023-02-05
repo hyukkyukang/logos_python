@@ -1,5 +1,5 @@
 import unittest
-from src.pylogos.algorithm.MRP import MRP
+from pylogos.algorithm.MRP import MRP
 from tests.test_koutrika_et_al_2010.utils import Query, SPJ_query, GroupBy_query, Nested_with_correlation_query, Nested_with_multisublink_query, Nested_with_groupby_query, Nested_with_multilevel_query
 
 
