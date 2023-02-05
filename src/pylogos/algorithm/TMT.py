@@ -1,7 +1,7 @@
 import numpy as np
 import networkx as nx
-from src.query_graph.koutrika_query_graph import Query_graph, Node, Value, Selection, Membership, Predicate
-from src.template.kourtrika_template import Generic_template
+from src.pylogos.query_graph.koutrika_query_graph import Query_graph, Node, Value, Selection, Membership, Predicate
+from src.pylogos.template.kourtrika_template import Generic_template
 from tests.test_koutrika_et_al_2010.utils import query_graph_to_generic_templates
 
 

@@ -2,10 +2,10 @@ import copy
 import unittest
 
 # Load template class
-from src.template.template import Generic_template, Specific_template, template_selection
+from src.pylogos.template.template import Generic_template, Specific_template, template_selection
 # Load template files
-from src.template.generic_template import generic_templates
-from src.template.specific_template_student import specific_templates
+from src.pylogos.template.generic_template import generic_templates
+from src.pylogos.template.specific_template_student import specific_templates
 
 # Input data to test
 from tests.test_modified_algorithm.utils import query_graph_for_simple_selection, \

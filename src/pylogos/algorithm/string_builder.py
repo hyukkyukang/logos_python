@@ -1,6 +1,6 @@
 from typing import List, Tuple, Optional
 
-from src.query_graph.koutrika_query_graph import Query_graph
+from src.pylogos.query_graph.koutrika_query_graph import Query_graph
 
 
 class StringBuilder():

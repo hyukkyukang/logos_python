@@ -1,6 +1,6 @@
 import unittest
-from src.algorithm.MRP import MRP
-from tests.test_koutrika_et_al_2010.utils import SPJ_query, GroupBy_query, Nested_with_correlation_query, Nested_with_multisublink_query, Nested_with_groupby_query, Nested_with_multilevel_query
+from src.pylogos.algorithm.MRP import MRP
+from tests.test_koutrika_et_al_2010.utils import Query, SPJ_query, GroupBy_query, Nested_with_correlation_query, Nested_with_multisublink_query, Nested_with_groupby_query, Nested_with_multilevel_query
 
 
 class Test_MRP(unittest.TestCase):
@@ -8,7 +8,7 @@ class Test_MRP(unittest.TestCase):
         super(Test_MRP, self).__init__(*args, **kwargs)
         self.algorithm = MRP()
 
-    def _test_query(self, query, test_name):
+    def _test_query(self, query: Query, test_name: str):
         query_graph = query.simplified_graph
         gold = query.MRP_nl.lower()
         # query_graph.draw()

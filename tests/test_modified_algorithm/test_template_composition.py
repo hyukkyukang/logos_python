@@ -1,11 +1,11 @@
 import unittest
 
 # Load template class
-from src.template.template import Template_instance, Generic_template, Specific_template, template_selection, template_composition
+from src.pylogos.template.template import Template_instance, Generic_template, Specific_template, template_selection, template_composition
 # Load template files
-from src.template.generic_template import generic_templates
-from src.template.specific_template_student import specific_templates
-from src.template.schema_templates.schema_template_student import schema_template
+from src.pylogos.template.generic_template import generic_templates
+from src.pylogos.template.specific_template_student import specific_templates
+from src.pylogos.template.schema_templates.schema_template_student import schema_template
 
 # Input data to test
 from tests.test_modified_algorithm.utils import query_graph_for_simple_selection, \

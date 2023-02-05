@@ -1,7 +1,7 @@
 import networkx as nx
 
-from src.algorithm.string_builder import StringBuilder
-from src.query_graph.koutrika_query_graph import (Attribute, Function,
+from src.pylogos.algorithm.string_builder import StringBuilder
+from src.pylogos.query_graph.koutrika_query_graph import (Attribute, Function,
                                                   Grouping, Having, Membership,
                                                   Node, Order, Predicate,
                                                   Query_graph, Relation,
@@ -163,7 +163,10 @@ class MRP():
         :return: description of the edge
         :rtype: str
         """
-        edge = query_graph.get_edge(src_node, dst_node)
+        try:
+            edge = query_graph.get_edge(src_node, dst_node)
+        except:
+            stop = 1
         return edge.label
     
     def label_mv(self, query_graph: Query_graph, reference_point: Node, relation: Node) -> StringBuilder:

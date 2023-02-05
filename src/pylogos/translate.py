@@ -1,5 +1,5 @@
-from src.algorithm.MRP import MRP
-from src.query_graph.koutrika_query_graph import Query_graph
+from src.pylogos.algorithm.MRP import MRP
+from src.pylogos.query_graph.koutrika_query_graph import Query_graph
 
 
 def translate(query_graph: Query_graph) -> str:

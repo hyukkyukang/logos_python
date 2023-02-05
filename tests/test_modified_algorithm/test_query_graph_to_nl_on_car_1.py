@@ -2,11 +2,11 @@ import copy
 import unittest
 
 # Load template class
-from src.template.template import Template_instance, Generic_template, Specific_template, template_selection, template_composition
+from src.pylogos.template.template import Template_instance, Generic_template, Specific_template, template_selection, template_composition
 # Load template files
-from src.template.generic_template import generic_templates
-from src.template.specific_template_student import specific_templates
-from src.template.schema_templates.schema_template_cars_data import schema_template
+from src.pylogos.template.generic_template import generic_templates
+from src.pylogos.template.specific_template_student import specific_templates
+from src.pylogos.template.schema_templates.schema_template_cars_data import schema_template
 from tests.test_modified_algorithm.utils_hjkim import load_graphs
 
 TEST_GRAPH_FILE_PATH = "/Users/hyukyu/github/nl2sql_web/translation_module/tests/graph_test/car_1/graph_gen_2.sql.graph"
