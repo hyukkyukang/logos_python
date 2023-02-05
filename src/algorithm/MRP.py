@@ -70,7 +70,7 @@ class MRP():
 
         return f"Find {cStr}."
 
-    def _call(self, current_node, parent_node, previous_reference_point, query_graph, opened=[], cStr=""):
+    def _call(self, current_node, parent_node, previous_reference_point, query_graph):
         def get_non_visited_outgoing_nodes(node: Node):
             return [dst for dst in query_graph.get_out_going_nodes(node) if dst not in self.visited_nodes]
         def get_next_non_visited_relation(node: Node):
@@ -95,6 +95,7 @@ class MRP():
 
         # Initialize the string builder
         string_builder = StringBuilder()
+        opened = []
 
         # Set visited 
         debug_print(f"Current node: {current_node.name}")
@@ -143,7 +144,7 @@ class MRP():
 
         while opened:
             pop_current_node, pop_parent_node, pop_referece_point = opened.pop(-1)
-            string_builder.add(self._call(pop_current_node, pop_parent_node, pop_referece_point, query_graph, [], ""))
+            string_builder.add(self._call(pop_current_node, pop_parent_node, pop_referece_point, query_graph))
 
         return string_builder
 
@@ -233,7 +234,7 @@ class MRP():
                                 dst_label = f"{dst.label}"
                                 string_builder.add_selection(reference_point.label, associated_relation.label, att.label, out_edge_from_att.label, dst_label, dst_parent_label)
                             else:
-                                nested_string_builder = self._call(associated_relation, None, None, graph, [], "")
+                                nested_string_builder = self._call(associated_relation, None, None, graph)
                                 value_str = nested_string_builder.to_text()
                                 string_builder.add_selection(reference_point.label, associated_relation.label, att.label, out_edge_from_att.label, value_str, None)
                         elif type(dst) == Function:
@@ -251,7 +252,7 @@ class MRP():
                                 dst_label = f"{dst.label} {next_att_node}"
                                 string_builder.add_selection(reference_point.label, associated_relation.label, att.label, out_edge_from_att.label, dst_label, dst_parent_label)
                             else:
-                                nested_string_builder = self._call(associated_relation, None, None, graph, [], "")
+                                nested_string_builder = self._call(associated_relation, None, None, graph)
                                 value_str = nested_string_builder.to_text()
                                 string_builder.add_selection(reference_point.label, associated_relation.label, att.label, out_edge_from_att.label, value_str, None)
 
