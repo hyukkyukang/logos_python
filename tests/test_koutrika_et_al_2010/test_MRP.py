@@ -14,8 +14,8 @@ class Test_MRP(unittest.TestCase):
         # query_graph.draw()
         #TODO: need to give reference point and parent node for the initial call
         reference_point, parent_node = None, None
-        composed_nl = self.algorithm(query_graph.query_subjects[0], parent_node, reference_point, query_graph).lower()
-        self.assertTrue(gold == composed_nl, f"MRP: Incorrect translation of {test_name} query!\nGOLD:{gold}\nResult:{composed_nl}")
+        composed_nl, mapping = self.algorithm(query_graph.query_subjects[0], parent_node, reference_point, query_graph)
+        self.assertTrue(gold == composed_nl.lower(), f"MRP: Incorrect translation of {test_name} query!\nGOLD:{gold}\nResult:{composed_nl}")
 
     def test_spj(self):
         self._test_query(SPJ_query(), "SPJ")

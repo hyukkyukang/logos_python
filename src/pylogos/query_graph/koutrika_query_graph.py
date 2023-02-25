@@ -102,8 +102,6 @@ class Edge(metaclass=abc.ABCMeta):
 
     def __hash__(self):
         return int(hashlib.sha256(self.signature.encode('utf-8')).hexdigest(), 16) % 10**8
-        # return self.signature
-        # return id(self)
 
     def __eq__(self, other):
         if isinstance(other, Dummy_edge):

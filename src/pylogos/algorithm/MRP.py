@@ -53,22 +53,22 @@ class MRP():
 
     def __call__(self, *args, **kwargs) -> str:
         string_builder = self._call(*args, **kwargs)
-        cStr = f"{string_builder.to_text()}"
-
+        cStr = string_builder.construct_sentence()
+        cStr.add_prefix("Find ")
         # My logic
         # Add string for group by
-        if self.has_group_by:
-            # Return nodes for group by and the reference point is the same
-            cStr += f". Create group according to {' and '.join(self.group_by_nodes)}"
-        # Add string for having by
-        if self.has_having:
-            # Return nodes for group by and the reference point is the same
-            cStr += f". Consider only groups whose  {' and '.join(self.having_clause)}"
-        # Add string for order by
-        if self.has_order_by:
-            cStr += f" order by {' and '.join([node.label for node in self.order_by_nodes])}"
+        # if self.has_group_by:
+        #     # Return nodes for group by and the reference point is the same
+        #     cStr += f". Create group according to {' and '.join(self.group_by_nodes)}"
+        # # Add string for having by
+        # if self.has_having:
+        #     # Return nodes for group by and the reference point is the same
+        #     cStr += f". Consider only groups whose  {' and '.join(self.having_clause)}"
+        # # Add string for order by
+        # if self.has_order_by:
+        #     cStr += f" order by {' and '.join([node.label for node in self.order_by_nodes])}"
 
-        return f"Find {cStr}."
+        return str(cStr) + ".", cStr.get_sentence_mapping()
 
     def _call(self, current_node, parent_node, previous_reference_point, query_graph):
         def get_non_visited_outgoing_nodes(node: Node):
@@ -98,7 +98,7 @@ class MRP():
         opened = []
 
         # Set visited 
-        debug_print(f"Current node: {current_node.name}")
+        # debug_print(f"Current node: {current_node.name}")
         self.visited_nodes.add(current_node)
         
         # Save the traversed path
@@ -123,16 +123,13 @@ class MRP():
                 # Get the edge description
                 edge_desc = self.label_edge(query_graph, src_node, dst_node)
 
-                # Get the node description.    
-                dst_desc = self.label_node(dst_node)
-
                 # If the node is not the previous visited reference point, generate the full description (i.e., including predicate and etc)
                 if dst_node != previous_reference_point:
                     reference_point_to_ground_to = current_node if has_membership else previous_reference_point
                     string_builder.add(self.label_v(query_graph, reference_point_to_ground_to, dst_node))
 
                 # Add the join condition description
-                string_builder.add_join_conditions(previous_reference_point.label, current_node.label, edge_desc, dst_desc, has_membership)
+                string_builder.add_join_conditions(previous_reference_point, current_node, edge_desc, dst_node, has_membership)
 
         # State changing: New reference point
         next_referece_point = current_node if current_node in query_graph.reference_points else previous_reference_point
@@ -147,10 +144,6 @@ class MRP():
             string_builder.add(self._call(pop_current_node, pop_parent_node, pop_referece_point, query_graph))
 
         return string_builder
-
-    def label_node(self, node: Node) -> str:
-        return node.label
-    
     def label_edge(self, query_graph: Query_graph, src_node: Node, dst_node: Node) -> str:
         """Get the description of the edge between two nodes
 
@@ -163,10 +156,7 @@ class MRP():
         :return: description of the edge
         :rtype: str
         """
-        try:
-            edge = query_graph.get_edge(src_node, dst_node)
-        except:
-            stop = 1
+        edge = query_graph.get_edge(src_node, dst_node)
         return edge.label
     
     def label_mv(self, query_graph: Query_graph, reference_point: Node, relation: Node) -> StringBuilder:
@@ -190,7 +180,7 @@ class MRP():
             function_node = query_graph.get_function_node_to(attribute)
             agg_func_label = function_node.label if function_node else None
             # Add projection info
-            string_builder.add_projection(relation.label, attribute.label, agg_func_label)
+            string_builder.add_projection(relation, attribute, agg_func_label)
             # Mark visited
             self.visited_nodes.add(attribute)
 
@@ -225,7 +215,7 @@ class MRP():
                         self.visited_nodes.add(att)
                         self.visited_nodes.add(dst)
                         if type(dst) == Value:
-                            string_builder.add_selection(reference_point.label, relation.label, att.label, out_edge_from_att.label, dst.label)
+                            string_builder.add_selection(reference_point, relation, att, out_edge_from_att, dst)
                         elif type(dst) == Attribute:
                             # Get parent relations
                             associated_relations = list(filter(lambda n: type(n) == Relation, graph.get_out_going_nodes(dst)))
@@ -233,13 +223,12 @@ class MRP():
                             associated_relation = associated_relations[0]
                             # If the associated relation is already visited, there is a cycle in the query graph, which means correlated nested query
                             if associated_relation in self.visited_nodes:
-                                dst_parent_label = reference_point.label if reference_point.label == associated_relation.label else relation.label
-                                dst_label = f"{dst.label}"
-                                string_builder.add_selection(reference_point.label, associated_relation.label, att.label, out_edge_from_att.label, dst_label, dst_parent_label)
+                                dst_parent = reference_point if reference_point.label == associated_relation.label else relation
+                                string_builder.add_selection(reference_point, associated_relation, att, out_edge_from_att, dst.label, dst_parent)
                             else:
                                 nested_string_builder = self._call(associated_relation, None, None, graph)
-                                value_str = nested_string_builder.to_text()
-                                string_builder.add_selection(reference_point.label, associated_relation.label, att.label, out_edge_from_att.label, value_str, None)
+                                value_str = nested_string_builder.construct_sentence()
+                                string_builder.add_selection(reference_point, associated_relation, att, out_edge_from_att, value_str, None)
                         elif type(dst) == Function:
                             # Get attribute
                             node_list = [n for n in graph.get_out_going_nodes(dst) if type(n) == Attribute]
@@ -251,13 +240,13 @@ class MRP():
                             associated_relation = associated_relations[0]
                             # If the associated relation is already visited, there is a cycle in the query graph, which means correlated nested query
                             if associated_relation in self.visited_nodes:
-                                dst_parent_label = reference_point.label if reference_point.label == associated_relation.label else relation.label
+                                dst_parent = reference_point if reference_point.label == associated_relation.label else relation
                                 dst_label = f"{dst.label} {next_att_node}"
-                                string_builder.add_selection(reference_point.label, associated_relation.label, att.label, out_edge_from_att.label, dst_label, dst_parent_label)
+                                string_builder.add_selection(reference_point, associated_relation, att, out_edge_from_att, dst_label, dst_parent)
                             else:
                                 nested_string_builder = self._call(associated_relation, None, None, graph)
-                                value_str = nested_string_builder.to_text()
-                                string_builder.add_selection(reference_point.label, associated_relation.label, att.label, out_edge_from_att.label, value_str, None)
+                                value_str = nested_string_builder.construct_sentence()
+                                string_builder.add_selection(reference_point, associated_relation, att, out_edge_from_att, value_str, None)
 
             elif type(out_edge_from_relation) == Grouping:
                 # Initialize the state for traversing all grouping attributes
@@ -269,7 +258,7 @@ class MRP():
                     self.visited_nodes.add(selected_node)
                     
                     # Add the description for the grouping
-                    string_builder.add_grouping(reference_point.label, relation.label, selected_node.label)
+                    string_builder.add_grouping(reference_point, relation, selected_node)
                     
                     # Get next node and stop if there is no next node
                     next_nodes = graph.get_out_going_nodes(selected_node)
@@ -288,7 +277,7 @@ class MRP():
                 # Get function node
                 function_node = graph.get_function_node_from(att)
                 assert function_node, f"Having condition must be connected to function node, but found {function_node} "
-                
+
                 # Get value node
                 out_nodes = graph.get_out_going_nodes(function_node)
                 assert len(out_nodes) == 1, f"Having condition must be connected to only one node, but found {len(out_nodes)} "
@@ -304,7 +293,7 @@ class MRP():
                 self.visited_nodes.add(value_node)
                 
                 # Append description for the having condition
-                string_builder.add_having(reference_point.label, relation.label, att.label, function_node.label, out_edge.label, value_node.label)
+                string_builder.add_having(reference_point, relation, att, function_node, out_edge, value_node)
 
         # Check if current node has attributes and values
         return string_builder
@@ -327,6 +316,7 @@ class MRP():
                 if type(edge) == Predicate and type(dst) == Value:
                     self.visited_nodes.add(function_node)
                     self.visited_nodes.add(dst)
-                    string_builder.add_having(relation.label, attribute.label, function_node.label, edge.label, dst.label)
+                    string_builder.add_having(relation, attribute, function_node, edge, dst)
 
         return string_builder
+    

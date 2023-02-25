@@ -1,8 +1,13 @@
-import re
 import abc
-import networkx as nx
-from pylogos.query_graph.koutrika_query_graph import Query_graph, Relation, Attribute, Value, Function, FunctionType, OperatorType
+import re
+
+from pylogos.query_graph.koutrika_query_graph import (Attribute, Function,
+                                                      FunctionType,
+                                                      OperatorType,
+                                                      Query_graph, Relation,
+                                                      Value)
 from pylogos.template.kourtrika_template import Generic_template, Template
+
 
 def compare_string_without_newline(str1, str2):
     str1 = re.sub(' +', ' ', str1)
