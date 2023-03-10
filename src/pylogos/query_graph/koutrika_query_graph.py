@@ -284,9 +284,18 @@ class Query_graph(nx.DiGraph):
                 reference_points.append(r1)                
 
         # condition 5
+        # If it is a relation to connect a nested query, it is a reference point
+        # For now, we assume that a relation that is connect with some operator other than equality is a relation in the inner query
         for r1 in self.relations:
-            if r1.name == "rating1":
-                reference_points.append(r1)
+            # Pass if already a reference point
+            if r1 in reference_points:
+                continue
+            for neighbor in self.get_neighbors(r1):
+                # If not join and the number of non visited relation is greater than 1
+                num_of_relations_to_visit = self.number_of_non_visited_relation_nodes(neighbor, set([r1]))
+                is_join = type(self.get_edge(r1, neighbor)) == Join
+                if not is_join and num_of_relations_to_visit > 0:
+                    reference_points.append(r1)
 
         return reference_points
 
