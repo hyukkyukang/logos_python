@@ -180,7 +180,7 @@ class Query(metaclass=abc.ABCMeta):
     
     @property
     @abc.abstractmethod
-    def graph(self) -> Query_graph:
+    def simplified_graph(self) -> Query_graph:
         pass
     
     @property
@@ -222,109 +222,109 @@ class SPJ_query(Query):
                 d.name = 'CS'
             """
     
-    @property
-    def graph(self):
-        if not SPJ_query._graph:
-            # Relation
-            comments = Relation("Comments")
-            students = Relation("Students")
-            studentHistory = Relation("StudentHistory")
-            departments = Relation("Departments")
-            courses = Relation("Courses")
-            courseSched = Relation("CourseSched")
-            instructors = Relation("Instructors")
+    # @property
+    # def graph(self):
+    #     if not SPJ_query._graph:
+    #         # Relation
+    #         comments = Relation("Comments")
+    #         students = Relation("Students")
+    #         studentHistory = Relation("StudentHistory")
+    #         departments = Relation("Departments")
+    #         courses = Relation("Courses")
+    #         courseSched = Relation("CourseSched")
+    #         instructors = Relation("Instructors")
 
-            # Attribute
-            comments_text = Attribute("Text")
-            comments_rating = Attribute("Rating")
-            comments_stuid = Attribute("comments.Stuid", "StuID")
+    #         # Attribute
+    #         comments_text = Attribute("Text")
+    #         comments_rating = Attribute("Rating")
+    #         comments_stuid = Attribute("comments.Stuid", label="StuID")
 
-            students_name = Attribute("Student.Name", "name")
-            students_gpa = Attribute("Student.GPA", "GPA")
-            students_class = Attribute("Student.Class", "Class")
-            students_stuid1 = Attribute("stuID1", "stuID")
-            students_stuid2 = Attribute("stuID2", "stuID")
+    #         students_name = Attribute("Student.Name", label="name")
+    #         students_gpa = Attribute("Student.GPA", label="GPA")
+    #         students_class = Attribute("Student.Class", label="Class")
+    #         students_stuid1 = Attribute("stuID1", "id", label="stuID")
+    #         students_stuid2 = Attribute("stuID2", "id", label="stuID")
 
-            studentHistory_stuid = Attribute("stuID3", "StuID")
-            studentHistory_courseid = Attribute("studenthistory.CourseID", "CourseID")
+    #         studentHistory_stuid = Attribute("stuID3", "id",label="StuID")
+    #         studentHistory_courseid = Attribute("studenthistory.CourseID", label="CourseID")
 
-            courses_courseid1 = Attribute("coursese.CourseID1", "CourseID")
-            courses_courseid2 = Attribute("coursese.CourseID2", "CourseID")
-            courses_title = Attribute("Title")
-            courses_depid = Attribute("courses.DepID", "DepID")
+    #         courses_courseid1 = Attribute("coursese.CourseID1", "course id", label="CourseID")
+    #         courses_courseid2 = Attribute("coursese.CourseID2", "course id", label="CourseID")
+    #         courses_title = Attribute("Title")
+    #         courses_depid = Attribute("courses.DepID", "department id", label="DepID")
 
-            departments_depid = Attribute("DepID")
-            departments_name = Attribute("deparment.Name", "Name")
+    #         departments_depid = Attribute("DepID")
+    #         departments_name = Attribute("deparment.Name", label="Name")
 
-            courseSched_courseid = Attribute("courseSched.CourseID", "CourseID")
-            courseSched_instrid = Attribute("courseSched.InstrID", "InstrID")
-            courseSched_term = Attribute("Term")
+    #         courseSched_courseid = Attribute("courseSched.CourseID", "course id", label="CourseID")
+    #         courseSched_instrid = Attribute("courseSched.InstrID", "instructor id", label="InstrID")
+    #         courseSched_term = Attribute("Term")
 
-            instructors_name = Attribute("instructors.Name", "Name")
-            instructors_instrid = Attribute("instructors.InstrID", "InstrID")
+    #         instructors_name = Attribute("instructors.Name", "name", label="Name")
+    #         instructors_instrid = Attribute("instructors.InstrID", "instructor id", label="InstrID")
 
-            # Values
-            v_3 = Value("3")
-            v_2011 = Value("2011")
-            v_cs = Value("CS")
-            v_spring = Value("Spring")
+    #         # Values
+    #         v_3 = Value("3")
+    #         v_2011 = Value("2011")
+    #         v_cs = Value("CS")
+    #         v_spring = Value("Spring")
 
-            query_graph = Query_graph("SPJ query")
-            query_graph.connect_membership(comments, comments_text)
-            query_graph.connect_selection(comments, comments_rating)
-            query_graph.connect_predicate(comments_rating, v_3)
+    #         query_graph = Query_graph("SPJ query")
+    #         query_graph.connect_membership(comments, comments_text)
+    #         query_graph.connect_selection(comments, comments_rating)
+    #         query_graph.connect_predicate(comments_rating, v_3)
 
-            query_graph.connect_join(comments, comments_stuid, students_stuid1, students)
+    #         query_graph.connect_join(comments, comments_stuid, students_stuid1, students)
             
-            query_graph.connect_membership(students, students_name)
-            query_graph.connect_membership(students, students_gpa)
-            query_graph.connect_selection(students, students_class)
-            query_graph.connect_predicate(students_class, v_2011)
+    #         query_graph.connect_membership(students, students_name)
+    #         query_graph.connect_membership(students, students_gpa)
+    #         query_graph.connect_selection(students, students_class)
+    #         query_graph.connect_predicate(students_class, v_2011)
 
-            query_graph.connect_join(students, students_stuid2, studentHistory_stuid, studentHistory)
-            query_graph.connect_join(studentHistory, studentHistory_courseid, courses_courseid1, courses)
-            query_graph.connect_membership(courses, courses_title)
+    #         query_graph.connect_join(students, students_stuid2, studentHistory_stuid, studentHistory)
+    #         query_graph.connect_join(studentHistory, studentHistory_courseid, courses_courseid1, courses)
+    #         query_graph.connect_membership(courses, courses_title)
             
-            query_graph.connect_join(courses, courses_depid, departments_depid, departments)
-            query_graph.connect_selection(departments, departments_name)
-            query_graph.connect_predicate(departments_name, v_cs)
+    #         query_graph.connect_join(courses, courses_depid, departments_depid, departments)
+    #         query_graph.connect_selection(departments, departments_name)
+    #         query_graph.connect_predicate(departments_name, v_cs)
 
-            query_graph.connect_join(courses, courses_courseid2, courseSched_courseid, courseSched)
-            query_graph.connect_selection(courseSched, courseSched_term)
-            query_graph.connect_predicate(courseSched_term, v_spring)
+    #         query_graph.connect_join(courses, courses_courseid2, courseSched_courseid, courseSched)
+    #         query_graph.connect_selection(courseSched, courseSched_term)
+    #         query_graph.connect_predicate(courseSched_term, v_spring)
             
-            query_graph.connect_join(courseSched, courseSched_instrid, instructors_instrid, instructors)
-            query_graph.connect_membership(instructors, instructors_name)
-            SPJ_query._graph = query_graph
-        return SPJ_query._graph
+    #         query_graph.connect_join(courseSched, courseSched_instrid, instructors_instrid, instructors)
+    #         query_graph.connect_membership(instructors, instructors_name)
+    #         SPJ_query._graph = query_graph
+    #     return SPJ_query._graph
 
     @property
     def simplified_graph(self):
         if not SPJ_query._graph:
             # Relation
-            comments = Relation("Comments", "comments")
-            students = Relation("Students", "students")
-            studentHistory = Relation("StudentHistory", "")
-            departments = Relation("Departments", "departments")
-            courses = Relation("Courses", "courses")
-            courseSched = Relation("CourseSched", "")
-            instructors = Relation("Instructors", "instructors")
+            comments = Relation("Comments", "comments", label="comments")
+            students = Relation("Students", "students", label="students")
+            studentHistory = Relation("StudentHistory", "student history", label="")
+            departments = Relation("Departments", "departments", label="departments")
+            courses = Relation("Courses", "courses", label="courses")
+            courseSched = Relation("CourseSched", "course schedule",label="")
+            instructors = Relation("Instructors", "instructors", label="instructors")
 
             # Attribute
-            comments_text = Attribute("Text", "description")
-            comments_rating = Attribute("Rating")
-            students_name = Attribute("students.Name", "name")
-            students_gpa = Attribute("GPA", "gpa")
-            students_class = Attribute("students.class", "class")
-            courses_title = Attribute("Title", "title")
-            departments_name = Attribute("departments.Name", "name")
-            courseSched_term = Attribute("Term", "term")
-            instructors_name = Attribute("instructors.Name", "name")
+            comments_text = Attribute("Text", "text", label="description")
+            comments_rating = Attribute("Rating", "rating")
+            students_name = Attribute("students.Name", "name", label="name")
+            students_gpa = Attribute("GPA", "gpa", label="gpa")
+            students_class = Attribute("students.class", "class", label="class")
+            courses_title = Attribute("Title", "title", label="title")
+            departments_name = Attribute("departments.Name", "name", label="name")
+            courseSched_term = Attribute("Term", "term", label="term")
+            instructors_name = Attribute("instructors.Name", "name", label="name")
 
             # Values
-            v_3 = Value("3")
-            v_2011 = Value("2011")
-            v_cs = Value("CS")
+            v_3 = Value("3", "3")
+            v_2011 = Value("2011", "2011")
+            v_cs = Value("CS", "CS")
             v_spring = Value("Spring", "spring")
 
             query_graph = Query_graph("SPJ query")
@@ -414,35 +414,35 @@ class GroupBy_query(Query):
                     HAVING avg(grade) > 3
                """
     
-    @property
-    def graph(self):
-        if not GroupBy_query._graph:
-            # Relation
-            studentHistory = Relation("StudentHistory", "student history")
+    # @property
+    # def graph(self):
+    #     if not GroupBy_query._graph:
+    #         # Relation
+    #         studentHistory = Relation("StudentHistory", "student history")
 
-            # Attribute
-            year_prj = Attribute("year")
-            year_grp = Attribute("year")
-            term_prj = Attribute("term")
-            term_grp = Attribute("term")
-            grade1 = Attribute("grade")
-            grade2 = Attribute("grade")
-            avg = Function(FunctionType.Avg)
-            max = Function(FunctionType.Max)
-            v_3 = Value("3")
+    #         # Attribute
+    #         year_prj = Attribute("year", "year")
+    #         year_grp = Attribute("year", "year")
+    #         term_prj = Attribute("term", "term")
+    #         term_grp = Attribute("term", "term")
+    #         grade1 = Attribute("grade", "grade")
+    #         grade2 = Attribute("grade", "grade")
+    #         avg = Function(FunctionType.Avg)
+    #         max = Function(FunctionType.Max)
+    #         v_3 = Value("3", "3")
 
-            query_graph = Query_graph("group-by query")
-            query_graph.connect_membership(studentHistory, grade1)
-            query_graph.connect_transformation(max, grade1)
-            query_graph.connect_grouping(studentHistory, year_grp)
-            query_graph.connect_grouping(year_grp, term_grp)
-            query_graph.connect_membership(studentHistory, year_prj)
-            query_graph.connect_membership(studentHistory, term_prj)
-            query_graph.connect_having(studentHistory, grade2)
-            query_graph.connect_transformation(grade2, avg)
-            query_graph.connect_predicate(avg, v_3)
-            GroupBy_query._graph = query_graph
-        return GroupBy_query._graph
+    #         query_graph = Query_graph("group-by query")
+    #         query_graph.connect_membership(studentHistory, grade1)
+    #         query_graph.connect_transformation(max, grade1)
+    #         query_graph.connect_grouping(studentHistory, year_grp)
+    #         query_graph.connect_grouping(year_grp, term_grp)
+    #         query_graph.connect_membership(studentHistory, year_prj)
+    #         query_graph.connect_membership(studentHistory, term_prj)
+    #         query_graph.connect_having(studentHistory, grade2)
+    #         query_graph.connect_transformation(grade2, avg)
+    #         query_graph.connect_predicate(avg, v_3)
+    #         GroupBy_query._graph = query_graph
+    #     return GroupBy_query._graph
 
 
     @property
@@ -460,7 +460,7 @@ class GroupBy_query(Query):
             grade2 = Attribute("grade_h", "grade")
             avg = Function(FunctionType.Avg)
             max = Function(FunctionType.Max)
-            v_3 = Value("3")
+            v_3 = Value("3", "3")
 
             query_graph = Query_graph("group-by query")
             query_graph.connect_membership(studentHistory, grade1)
@@ -498,38 +498,38 @@ class Nested_with_correlation_query(Query):
             SELECT s.name FROM student s WHERE NOT EXISTS (SELECT * FROM student s2 WHERE s2.GPA > s.GPA)
             """
 
-    @property
-    def graph(self):
-        if not Nested_with_correlation_query._graph:
-            # Relation
-            students = Relation("students", "students")
-            students2 = Relation("students", "students","S2")
+    # @property
+    # def graph(self):
+    #     if not Nested_with_correlation_query._graph:
+    #         # Relation
+    #         students = Relation("students", "students")
+    #         students2 = Relation("students", "students","S2")
 
-            # Attribute
-            name = Attribute("name", "name")
-            gpa1 = Attribute("GPA_out", "GPA")
-            gpa2 = Attribute("GPA_in", "GPA")
-            star_node1 = Attribute("*_out", "all")
-            star_node2 = Attribute("*_in", "all")
+    #         # Attribute
+    #         name = Attribute("name", "name")
+    #         gpa1 = Attribute("GPA_out", "GPA")
+    #         gpa2 = Attribute("GPA_in", "GPA")
+    #         star_node1 = Attribute("*_out", "all")
+    #         star_node2 = Attribute("*_in", "all")
 
-            # Query graph
-            query_graph = Query_graph("nested query")
-            query_graph.connect_membership(students, name)
-            query_graph.connect_selection(gpa1, students)
-            query_graph.connect_selection(students2, gpa2)
-            query_graph.connect_selection(students, star_node1)
-            query_graph.connect_predicate(star_node1, star_node2, OperatorType.NotExists)
-            query_graph.connect_selection(star_node2, students2)
-            query_graph.connect_predicate(gpa2, gpa1, OperatorType.GreaterThan)
-            Nested_with_correlation_query._graph = query_graph
-        return Nested_with_correlation_query._graph
+    #         # Query graph
+    #         query_graph = Query_graph("nested query")
+    #         query_graph.connect_membership(students, name)
+    #         query_graph.connect_selection(gpa1, students)
+    #         query_graph.connect_selection(students2, gpa2)
+    #         query_graph.connect_selection(students, star_node1)
+    #         query_graph.connect_predicate(star_node1, star_node2, OperatorType.NotExists)
+    #         query_graph.connect_selection(star_node2, students2)
+    #         query_graph.connect_predicate(gpa2, gpa1, OperatorType.GreaterThan)
+    #         Nested_with_correlation_query._graph = query_graph
+    #     return Nested_with_correlation_query._graph
 
     @property
     def simplified_graph(self):
         if not Nested_with_correlation_query._graph:
             # Relation
-            students = Relation("students_out", "students", "S1")
-            students2 = Relation("students_in", "students", "S2")
+            students = Relation("students_out", "students", alias="S1")
+            students2 = Relation("students_in", "students", alias="S2")
 
             # Attribute
             name = Attribute("name", "name")
@@ -586,96 +586,96 @@ class Nested_with_multisublink_query(Query):
             HAVING AVG(r1.stars) >= 3
             """
 
-    @property
-    def graph(self):
-        if not Nested_with_multisublink_query._graph:
-            # Relation
-            movie1 = Relation("movie1", "movie", "m1")
-            movie2 = Relation("movie2", "movie", "m2")
-            movie3 = Relation("movie3", "movie", "m3")
-            rating1 = Relation("rating1", "rating", "r1")
-            rating2 = Relation("rating2", "rating", "r2")
-            direction = Relation("direction", "direction", "md")
-            director = Relation("director", "director", "d")
+    # @property
+    # def graph(self):
+    #     if not Nested_with_multisublink_query._graph:
+    #         # Relation
+    #         movie1 = Relation("movie1", "movie", "m1")
+    #         movie2 = Relation("movie2", "movie", "m2")
+    #         movie3 = Relation("movie3", "movie", "m3")
+    #         rating1 = Relation("rating1", "rating", "r1")
+    #         rating2 = Relation("rating2", "rating", "r2")
+    #         direction = Relation("direction", "direction", "md")
+    #         director = Relation("director", "director", "d")
 
-            # Attribute
-            m1_id1 = Attribute("m1_id1", "id")
-            m1_id2 = Attribute("m1_id2", "id")
-            m1_id3 = Attribute("m1_id3", "id")
-            m1_id4 = Attribute("m1_id4", "id")
-            m1_id5 = Attribute("m1_id5", "id")
-            r1_stars1 = Attribute("r1_stars1", "stars")
-            r1_stars2 = Attribute("r1_stars2", "stars")
-            r2_stars = Attribute("r2_stars", "stars")
-            r2_mov_id = Attribute("r2_mov_id", "mov_id")
-            m2_id1 = Attribute("m2_id1", "id")
-            m2_id2 = Attribute("m2_id2", "id")
-            m3_id1 = Attribute("m3_id1", "id")
-            m3_id2 = Attribute("m3_id2", "id")
-            md_mov_id = Attribute("md_mov_id", "mov_id")
-            dir_id = Attribute("dir_id", "id")
-            d_id = Attribute("d_id", "id")
-            first_name = Attribute("first_name", "first_name")
-            last_name = Attribute("last_name", "last_name")
+    #         # Attribute
+    #         m1_id1 = Attribute("m1_id1", "id")
+    #         m1_id2 = Attribute("m1_id2", "id")
+    #         m1_id3 = Attribute("m1_id3", "id")
+    #         m1_id4 = Attribute("m1_id4", "id")
+    #         m1_id5 = Attribute("m1_id5", "id")
+    #         r1_stars1 = Attribute("r1_stars1", "stars")
+    #         r1_stars2 = Attribute("r1_stars2", "stars")
+    #         r2_stars = Attribute("r2_stars", "stars")
+    #         r2_mov_id = Attribute("r2_mov_id", "mov_id")
+    #         m2_id1 = Attribute("m2_id1", "id")
+    #         m2_id2 = Attribute("m2_id2", "id")
+    #         m3_id1 = Attribute("m3_id1", "id")
+    #         m3_id2 = Attribute("m3_id2", "id")
+    #         md_mov_id = Attribute("md_mov_id", "mov_id")
+    #         dir_id = Attribute("dir_id", "id")
+    #         d_id = Attribute("d_id", "id")
+    #         first_name = Attribute("first_name", "first_name")
+    #         last_name = Attribute("last_name", "last_name")
 
-            # Function nodes
-            f_avg = Function(FunctionType.Avg)
-            f_max = Function(FunctionType.Max)
+    #         # Function nodes
+    #         f_avg = Function(FunctionType.Avg)
+    #         f_max = Function(FunctionType.Max)
             
-            # Values
-            v_first_name = Value("Spielberg")
-            v_last_name = Value("Steven")
-            v_3 = Value("3")
+    #         # Values
+    #         v_first_name = Value("Spielberg")
+    #         v_last_name = Value("Steven")
+    #         v_3 = Value("3")
 
-            # Query graph
-            query_graph = Query_graph("nested query2")
-            query_graph.connect_membership(movie1, m1_id1)
-            query_graph.connect_join(movie1, m1_id2, r1_stars1, rating1)
-            query_graph.connect_selection(rating1, r1_stars1)
-            query_graph.connect_predicate(r1_stars1, f_max, OperatorType.LessThan)
+    #         # Query graph
+    #         query_graph = Query_graph("nested query2")
+    #         query_graph.connect_membership(movie1, m1_id1)
+    #         query_graph.connect_join(movie1, m1_id2, r1_stars1, rating1)
+    #         query_graph.connect_selection(rating1, r1_stars1)
+    #         query_graph.connect_predicate(r1_stars1, f_max, OperatorType.LessThan)
 
-            # For nested query1
-            query_graph.connect_transformation(r2_stars, f_max)
-            query_graph.connect_membership(rating2, r2_stars)
-            query_graph.connect_join(rating2, r2_mov_id, m2_id1, movie2)
+    #         # For nested query1
+    #         query_graph.connect_transformation(r2_stars, f_max)
+    #         query_graph.connect_membership(rating2, r2_stars)
+    #         query_graph.connect_join(rating2, r2_mov_id, m2_id1, movie2)
             
-            # For correlation
-            query_graph.connect_selection(movie1,  m1_id3)
-            query_graph.connect_predicate(m2_id2, m1_id3)
+    #         # For correlation
+    #         query_graph.connect_selection(movie1,  m1_id3)
+    #         query_graph.connect_predicate(m2_id2, m1_id3)
             
-            # For second where clause
-            query_graph.connect_selection(movie1, m1_id4)
-            query_graph.connect_predicate(m1_id4, m3_id1, OperatorType.In)
+    #         # For second where clause
+    #         query_graph.connect_selection(movie1, m1_id4)
+    #         query_graph.connect_predicate(m1_id4, m3_id1, OperatorType.In)
             
-            # For nested query2
-            query_graph.connect_membership(movie3, m3_id1)
-            query_graph.connect_join(movie3, m3_id2, md_mov_id, direction)
-            query_graph.connect_join(direction, dir_id, d_id, director)
-            query_graph.connect_selection(director, first_name)
-            query_graph.connect_predicate(first_name, v_first_name)
-            query_graph.connect_selection(director, last_name)
-            query_graph.connect_predicate(last_name, v_last_name)
+    #         # For nested query2
+    #         query_graph.connect_membership(movie3, m3_id1)
+    #         query_graph.connect_join(movie3, m3_id2, md_mov_id, direction)
+    #         query_graph.connect_join(direction, dir_id, d_id, director)
+    #         query_graph.connect_selection(director, first_name)
+    #         query_graph.connect_predicate(first_name, v_first_name)
+    #         query_graph.connect_selection(director, last_name)
+    #         query_graph.connect_predicate(last_name, v_last_name)
             
-            # For grouping and having
-            query_graph.connect_grouping(movie1, m1_id5)
-            query_graph.connect_having(rating1, r1_stars2)
-            query_graph.connect_transformation(r1_stars2, f_avg)
-            query_graph.connect_predicate(f_avg, v_3, OperatorType.GEq)
+    #         # For grouping and having
+    #         query_graph.connect_grouping(movie1, m1_id5)
+    #         query_graph.connect_having(rating1, r1_stars2)
+    #         query_graph.connect_transformation(r1_stars2, f_avg)
+    #         query_graph.connect_predicate(f_avg, v_3, OperatorType.GEq)
             
-            Nested_with_multisublink_query._graph = query_graph
-        return Nested_with_multisublink_query._graph
+    #         Nested_with_multisublink_query._graph = query_graph
+    #     return Nested_with_multisublink_query._graph
 
     @property
     def simplified_graph(self):
         if not Nested_with_multisublink_query._graph:
             # Relation
-            movie1 = Relation("movie1", "movie", "m1", is_primary=True)
-            movie2 = Relation("movie2", "movie", "m2")
-            movie3 = Relation("movie3", "movie", "m3")
-            rating1 = Relation("rating1", "rating", "r1")
-            rating2 = Relation("rating2", "rating", "r2")
-            direction = Relation("direction", " ", "md")
-            director = Relation("director", "director", "d")
+            movie1 = Relation("movie1", "movie", alias="m1", is_primary=True)
+            movie2 = Relation("movie2", "movie", alias="m2")
+            movie3 = Relation("movie3", "movie", alias="m3")
+            rating1 = Relation("rating1", "rating", alias="r1")
+            rating2 = Relation("rating2", "rating", alias="r2")
+            direction = Relation("direction", " ", alias="md")
+            director = Relation("director", "director", alias="d")
 
             # Attribute
             m1_id1 = Attribute("m1_id1", "id")
@@ -695,9 +695,9 @@ class Nested_with_multisublink_query(Query):
             f_max = Function(FunctionType.Max)
             
             # Values
-            v_first_name = Value("Spielberg")
-            v_last_name = Value("Steven")
-            v_3 = Value("3")
+            v_first_name = Value("Spielberg", "Spielberg")
+            v_last_name = Value("Steven", "steven")
+            v_3 = Value("3", "3")
 
             # Query graph
             query_graph = Query_graph("Multiple sublink nested query")
@@ -776,8 +776,8 @@ class Nested_with_groupby_query(Query):
     def simplified_graph(self):
         if not Nested_with_groupby_query._graph:
             # Relation
-            movie1 = Relation("movie1", "movie", "m1", is_primary=True)
-            movie2 = Relation("movie2", "movie", "m2")
+            movie1 = Relation("movie1", "movie", alias="m1", is_primary=True)
+            movie2 = Relation("movie2", "movie", alias="m2")
 
             # Attribute
             year1 = Attribute("year1", "year")
@@ -794,8 +794,8 @@ class Nested_with_groupby_query(Query):
             f_avg = Function(FunctionType.Avg)
 
             # Value
-            v_2020 = Value("2020")
-            v_romance = Value("romance")
+            v_2020 = Value("2020", "2020")
+            v_romance = Value("romance", "romance")
 
             # Query graph
             query_graph = Query_graph("Nested query with group by")
@@ -850,9 +850,9 @@ class Nested_with_multilevel_query(Query):
     def simplified_graph(self):
         if not Nested_with_multilevel_query._graph:
             # Relations
-            movie1 = Relation("movie1", "movie", "m1", is_primary=True)
-            movie2 = Relation("movie2", "movie", "m2")
-            movie3 = Relation("movie3", "movie", "m3")
+            movie1 = Relation("movie1", "movie", alias="m1", is_primary=True)
+            movie2 = Relation("movie2", "movie", alias="m2")
+            movie3 = Relation("movie3", "movie", alias="m3")
             
             # Attributes
             id = Attribute("id", "id")
@@ -868,8 +868,8 @@ class Nested_with_multilevel_query(Query):
             f_max = Function(FunctionType.Max)
             
             # Values
-            v_spielberg = Value("Spielberg")
-            v_nolan = Value("Nolan")
+            v_spielberg = Value("Spielberg", "Spielberg")
+            v_nolan = Value("Nolan", "Nolan")
             
             # Query graph
             query_graph = Query_graph("Multi-level nested query")

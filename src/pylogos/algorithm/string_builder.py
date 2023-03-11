@@ -477,11 +477,11 @@ class StringBuilder:
     def add_projection(self, relation: Node, attribute: Node, agg_func: Optional[str]) -> None:
         # Create SStr objects
         rel_sstr = SStrChar(
-            relation.label, relation.name, attribute.name, op_type=OperationType.Projection, is_table=True
+            relation.label, relation.entity_name, attribute.entity_name, op_type=OperationType.Projection, is_table=True
         )
-        att_sstr = SStrChar(attribute.label, relation.name, attribute.name, op_type=OperationType.Projection)
+        att_sstr = SStrChar(attribute.label, relation.entity_name, attribute.entity_name, op_type=OperationType.Projection)
         agg_sstr = (
-            SStrChar(agg_func, relation.name, attribute.name, op_type=OperationType.Projection) if agg_func else None
+            SStrChar(agg_func, relation.entity_name, attribute.entity_name, op_type=OperationType.Projection) if agg_func else None
         )
         self.projection.append((rel_sstr, att_sstr, agg_sstr))
 
@@ -496,29 +496,29 @@ class StringBuilder:
     ) -> None:
         # Create SStr objects
         ref_sstr = SStrChar(
-            reference_point.label, reference_point.name, attribute.name, op_type=OperationType.Selection, is_table=True
+            reference_point.label, reference_point.entity_name, attribute.entity_name, op_type=OperationType.Selection, is_table=True
         )
         rel_sstr = SStrChar(
-            relation.label, relation.name, attribute.name, op_type=OperationType.Selection, is_table=True
+            relation.label, relation.entity_name, attribute.entity_name, op_type=OperationType.Selection, is_table=True
         )
-        att_sstr = SStrChar(attribute.label, relation.name, attribute.name, op_type=OperationType.Selection)
-        op_sstr = SStrChar(op.label, relation.name, attribute.name, op_type=OperationType.Selection)
+        att_sstr = SStrChar(attribute.label, relation.entity_name, attribute.entity_name, op_type=OperationType.Selection)
+        op_sstr = SStrChar(op.label, relation.entity_name, attribute.entity_name, op_type=OperationType.Selection)
         # Handle different by operand type
-        arg2 = operand_parent.name if operand_parent else relation.name
+        arg2 = operand_parent.entity_name if operand_parent else relation.entity_name
         if type(operand) == SStrSen:
             operand_sstr = operand
             operand_parent_sstr = None
         else:
             if type(operand) == str:
                 arg1 = operand
-                arg3 = attribute.name
+                arg3 = attribute.entity_name
             else:
                 arg1 = operand.label
-                arg3 = operand.name
+                arg3 = operand.entity_name
             operand_sstr = SStrChar(arg1, arg2, arg3, op_type=OperationType.Selection)
             operand_parent_sstr = (
                 SStrChar(
-                    operand_parent.label, operand_parent.name, arg3, op_type=OperationType.Selection, is_table=True
+                    operand_parent.label, operand_parent.entity_name, arg3, op_type=OperationType.Selection, is_table=True
                 )
                 if operand_parent
                 else None
@@ -529,21 +529,21 @@ class StringBuilder:
         self, reference_point: Node, relation1: Node, edge: str, relation2: Node, has_incoming_edge: bool
     ) -> None:
         # Create SStr objects
-        ref_sstr = SStrChar(reference_point.label, reference_point.name, op_type=OperationType.Selection, is_table=True)
-        rel1_sstr = SStrChar(relation1.label, relation1.name, op_type=OperationType.Selection, is_table=True)
-        edge_sstr = SStrChar(edge, relation1.name, relation2.name, op_type=OperationType.Selection)
-        rel2_sstr = SStrChar(relation2.label, relation2.name, op_type=OperationType.Selection, is_table=True)
+        ref_sstr = SStrChar(reference_point.label, reference_point.entity_name, op_type=OperationType.Selection, is_table=True)
+        rel1_sstr = SStrChar(relation1.label, relation1.entity_name, op_type=OperationType.Selection, is_table=True)
+        edge_sstr = SStrChar(edge, relation1.entity_name, relation2.entity_name, op_type=OperationType.Selection)
+        rel2_sstr = SStrChar(relation2.label, relation2.entity_name, op_type=OperationType.Selection, is_table=True)
         self.join_conditions.append((ref_sstr, rel1_sstr, edge_sstr, rel2_sstr, has_incoming_edge))
 
     def add_grouping(self, reference_point: Node, relation: Node, attribute: Node) -> None:
         # Create SStr objects
         ref_sstr = SStrChar(
-            reference_point.label, reference_point.name, attribute.name, op_type=OperationType.Grouping, is_table=True
+            reference_point.label, reference_point.entity_name, attribute.entity_name, op_type=OperationType.Grouping, is_table=True
         )
         rel_sstr = SStrChar(
-            relation.label, relation.name, attribute.name, op_type=OperationType.Grouping, is_table=True
+            relation.label, relation.entity_name, attribute.entity_name, op_type=OperationType.Grouping, is_table=True
         )
-        att_sstr = SStrChar(attribute.label, relation.name, attribute.name, op_type=OperationType.Grouping)
+        att_sstr = SStrChar(attribute.label, relation.entity_name, attribute.entity_name, op_type=OperationType.Grouping)
         self.grouping.append((ref_sstr, rel_sstr, att_sstr))
 
     def add_having(
@@ -551,15 +551,15 @@ class StringBuilder:
     ) -> None:
         # Create SStr objects
         ref_sstr = SStrChar(
-            reference_point.label, reference_point.name, attribute.name, op_type=OperationType.Selection, is_table=True
+            reference_point.label, reference_point.entity_name, attribute.entity_name, op_type=OperationType.Selection, is_table=True
         )
         rel_sstr = SStrChar(
-            relation.label, relation.name, attribute.name, op_type=OperationType.Selection, is_table=True
+            relation.label, relation.entity_name, attribute.entity_name, op_type=OperationType.Selection, is_table=True
         )
-        att_sstr = SStrChar(attribute.label, relation.name, attribute.name, op_type=OperationType.Selection)
-        func_sstr = SStrChar(function.label, relation.name, attribute.name, op_type=OperationType.Selection)
-        edge_sstr = SStrChar(edge.label, relation.name, attribute.name, op_type=OperationType.Selection)
-        val_sstr = SStrChar(value.label, relation.name, attribute.name, op_type=OperationType.Selection)
+        att_sstr = SStrChar(attribute.label, relation.entity_name, attribute.entity_name, op_type=OperationType.Selection)
+        func_sstr = SStrChar(function.label, relation.entity_name, attribute.entity_name, op_type=OperationType.Selection)
+        edge_sstr = SStrChar(edge.label, relation.entity_name, attribute.entity_name, op_type=OperationType.Selection)
+        val_sstr = SStrChar(value.label, relation.entity_name, attribute.entity_name, op_type=OperationType.Selection)
 
         self.having.append((ref_sstr, rel_sstr, att_sstr, func_sstr, edge_sstr, val_sstr))
 

@@ -59,9 +59,10 @@ FunctionLabels = ["minimum", "maximum", "sum of", "average", "number of"]
 
 # Node
 class Node(metaclass=abc.ABCMeta):
-    def __init__(self, name, label=None):
-        self.name = name
-        self.label = name if label is None else label
+    def __init__(self, node_name, entity_name, label=None):
+        self.node_name = node_name
+        self.entity_name = entity_name
+        self.label = entity_name if label is None else label
 
     def __str__(self):
         return self.label
@@ -76,19 +77,19 @@ class Node(metaclass=abc.ABCMeta):
 
     @property
     def signature(self):
-        return self.name.lower()
+        return self.node_name.lower()
 
 
 class Relation(Node):
-    def __init__(self, name, label=None, alias=None, is_primary=False):
-        super().__init__(name, label)
+    def __init__(self, node_name, entity_name, label=None, alias=None, is_primary=False):
+        super().__init__(node_name, entity_name, label)
         self.alias = alias
         self.is_primary = is_primary
 
 
 class Attribute(Node):
-    def __init__(self, name, label=None):
-        super().__init__(name, label)
+    def __init__(self, node_name, entity_name, label=None):
+        super().__init__(node_name, entity_name, label)
 
 
 class Function(Node):
@@ -99,14 +100,14 @@ class Function(Node):
 
 
 class Value(Node):
-    def __init__(self, name, label=None):
-        super().__init__(name, label)
+    def __init__(self, node_name, entity_name, label=None):
+        super().__init__(node_name, entity_name, label)
 
     def __hash__(self):
-        return int(hashlib.sha256(self.name.lower().encode("utf-8")).hexdigest(), 16) % 10**8
+        return int(hashlib.sha256(self.node_name.lower().encode("utf-8")).hexdigest(), 16) % 10**8
 
     def __eq__(self, other):
-        if isinstance(other, self.__class__) and (self.name == "" or other.name == ""):
+        if isinstance(other, self.__class__) and (self.node_name == "" or other.node_name == ""):
             return True
         return super().__eq__(other)
 
@@ -245,9 +246,9 @@ class Dummy_edge(Edge):
 
 # Query Graph
 class Query_graph(nx.DiGraph):
-    def __init__(self, name="", rp_dist_threshold=4):
+    def __init__(self, node_name="", rp_dist_threshold=4):
         super().__init__()
-        self.name = name
+        self.node_name = node_name
         self._query_subjects = None
         self.reference_point_distance_threshold = rp_dist_threshold
 
