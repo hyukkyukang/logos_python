@@ -70,7 +70,8 @@ class MRP():
 
         return str(cStr) + ".", cStr.get_sentence_mapping()
 
-    def _call(self, current_node, parent_node, previous_reference_point, query_graph):
+    def _call(self, current_node, parent_node, previous_reference_point, query_graph, self_path=None):
+        self_path = [] if self_path == None else self_path
         def get_non_visited_outgoing_nodes(node: Node):
             return [dst for dst in query_graph.get_out_going_nodes(node) if dst not in self.visited_nodes]
         def get_next_non_visited_relation(node: Node):
@@ -87,9 +88,11 @@ class MRP():
                 If the current node has no membership edges, we generate the description from the previous reference point to the current node
             """
             if has_membership:
-                dst_node, src_node = self.path.pop(-1)
+                # dst_node, src_node = self.path.pop(-1)
+                dst_node, src_node = self_path.pop(-1)
             else:
-                src_node, dst_node = self.path.pop(0)
+                # src_node, dst_node = self.path.pop(0)
+                src_node, dst_node = self_path.pop(0)
             return (src_node, dst_node)
             
 
@@ -104,7 +107,8 @@ class MRP():
         # Save the traversed path
         if parent_node:
             assert query_graph.has_path(parent_node, current_node), f"Current node {current_node} is not reachable from Parent node {parent_node}"
-            self.path.append([parent_node, current_node])
+            self_path.append([parent_node, current_node])
+            # self.path.append([parent_node, current_node])
 
         # Construct a description for the reference point
         if current_node in query_graph.reference_points:
@@ -116,7 +120,8 @@ class MRP():
                 string_builder.add(self.label_mv(query_graph, current_node, current_node))
 
             # Create a description for traversed path
-            while self.path:
+            while self_path:
+            # while self.path:
                 # Get nodes of an edge to translate
                 src_node, dst_node = pop_nodes_from_path(has_membership)
 
@@ -141,7 +146,7 @@ class MRP():
 
         while opened:
             pop_current_node, pop_parent_node, pop_referece_point = opened.pop(-1)
-            string_builder.add(self._call(pop_current_node, pop_parent_node, pop_referece_point, query_graph))
+            string_builder.add(self._call(pop_current_node, pop_parent_node, pop_referece_point, query_graph, self_path))
 
         return string_builder
     def label_edge(self, query_graph: Query_graph, src_node: Node, dst_node: Node) -> str:
