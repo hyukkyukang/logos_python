@@ -233,7 +233,7 @@ class MRP():
                             else:
                                 nested_string_builder = self._call(associated_relation, None, None, graph)
                                 value_str = nested_string_builder.construct_sentence()
-                                string_builder.add_selection(reference_point, associated_relation, att, out_edge_from_att, value_str, None)
+                                string_builder.add_selection(reference_point, relation, att, out_edge_from_att, value_str, None)
                         elif type(dst) == Function:
                             # Get attribute
                             node_list = [n for n in graph.get_out_going_nodes(dst) if type(n) == Attribute]

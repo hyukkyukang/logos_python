@@ -402,6 +402,85 @@ class SPJ_query(Query):
             title of these CS courses and the description of comments whose rating is greater than 3
             given by these students
             """
+            
+            
+
+class SPJ_query2(Query):
+    @property
+    def sql(self):
+        return """
+            SELECT movie.title, reviewer.name FROM movie, rating, reviewer WHERE reviewer.name = "Josh Cates" AND rating.stars > 4.5
+            """
+    @property
+    def simplified_graph(self):
+        if not SPJ_query2._graph:
+            # Relation
+            ## Initialize nodes
+            # Relation
+            movie = Relation("movie", "movie")
+            rating = Relation("rating", "rating")
+            reviewer = Relation("reviewer", "reviewer")
+
+            # Attribute
+            mov_title = Attribute("mov_title", "title")
+            rev_name1 = Attribute("rev_name1", "name")
+            rev_name2 = Attribute("rev_name2", "name")
+            rating_stars_2 = Attribute("rating_stars_2", "stars")
+            
+            # Values
+            v_rev_name = Value("Josh Cates", "Josh Cates")
+            v_stars = Value("4.5", "4.5")
+            
+            ## Construct graph
+            query_graph = Query_graph("MovieQuery3")
+            query_graph.connect_membership(movie, mov_title)
+            query_graph.connect_membership(reviewer, rev_name1)
+            # query_graph.connect_transformation(avg, max_speed)
+            
+            query_graph.connect_simplified_join(movie, rating)
+            query_graph.connect_simplified_join(rating, reviewer)
+
+            query_graph.connect_selection(reviewer, rev_name2)
+            query_graph.connect_predicate(rev_name2, v_rev_name)
+
+            query_graph.connect_selection(rating, rating_stars_2)
+            query_graph.connect_predicate(rating_stars_2, v_stars, OperatorType.GreaterThan)
+            SPJ_query2._graph = query_graph
+        return SPJ_query2._graph
+
+    @property
+    def specific_templates(self):
+        if not hasattr(self, "_specific_templates"):
+            self._specific_templates = [Template_S_to_I(self.graph), Template_C_to_Val(self.graph), Template_I_to_C(self.graph)]
+        return self._specific_templates
+
+    @property
+    def templates(self):
+        return self.specific_templates + self.generic_templates
+    
+    @property
+    def template_set(self):
+        raise NotImplementedError("Need to add gold for template set")
+        return None
+
+    @property
+    def nl(self):
+        return self.BST_nl
+
+    @property
+    def BST_nl(self) -> str:
+        return """
+            
+            """
+
+    @property
+    def MRP_nl(self) -> str:
+        return ""
+
+    @property
+    def TMT_nl(self) -> str:
+        return """
+            """
 
 
 class GroupBy_query(Query):
@@ -908,6 +987,90 @@ class Nested_with_multilevel_query(Query):
     @property
     def MRP_nl(self) -> str:
         return "Find id and name of movie where genre of movie is in genre of movie where director of movie is spielberg and revenue of movie is less than maximum revenue of movie where director of movie is nolan."
+
+    @property
+    def TMT_nl(self) -> str:
+        return """
+            """
+
+class TestQuery2(Query):
+    @property
+    def sql(self):
+        return """SELECT m1.id, r1.stars FROM movie m1, rating r1 WHERE r1.stars < (SELECT q1.max_stars FROM q1result q1 WHERE q1.m_id = m1.id) AND m1.id IN (SELECT q2.id FROM q2result q2) GROUP BY m1.id)"""
+
+    @property
+    def graph(self):
+        raise NotImplementedError("TestQuery2 is not implemented yet")
+
+    @property
+    def simplified_graph(self):
+        if not TestQuery2._graph:
+            # Relation
+            movie = Relation("movie", "movie", is_primary = True)
+            Q1result = Relation("Q1result", "Q1's results")
+            Q2result = Relation("Q2result", "Q2's results")
+            rating = Relation("rating", "rating", is_primary = True)
+
+            # Attribute
+            movie_id1 = Attribute("m1_id1", "id")
+            movie_id2 = Attribute("m1_id2", "id")
+            movie_id3 = Attribute("m1_id3", "id")
+            movie_id4 = Attribute("m1_id4", "id")
+
+            rating_stars1 = Attribute("r1_stars", "stars")
+            rating_stars2 = Attribute("r1_stars1", "stars")
+
+            Q1_max_stars = Attribute("Q1_max_stars", "max_stars")
+            Q1_movie_id = Attribute("Q1_movie_id", "movie_id")
+
+            Q2_movie_ids = Attribute("Q2_movie_ids", "movie_id")
+            
+            rating_avg = Function(FunctionType.Avg)
+
+
+            ## Construct graph
+            query_graph = Query_graph("CorrelatedNestedQuery3")
+            query_graph.connect_membership(movie, movie_id1)
+            query_graph.connect_membership(rating, rating_stars1)
+            query_graph.connect_transformation(rating_avg, rating_stars1)
+
+            query_graph.connect_simplified_join(movie, rating, "", "belongs to")
+
+            # Nesting
+            query_graph.connect_selection(rating, rating_stars2)
+            query_graph.connect_predicate(rating_stars2, Q1_max_stars, OperatorType.LessThan)
+
+            query_graph.connect_membership(Q1result, Q1_max_stars)
+
+            # Correlation - skip
+            query_graph.connect_selection(Q1result, Q1_movie_id)
+            query_graph.connect_predicate(Q1_movie_id, movie_id4)
+            query_graph.connect_selection(movie_id4, movie)
+
+            # Second Nesting
+            query_graph.connect_selection(movie, movie_id2)
+            query_graph.connect_predicate(movie_id2, Q2_movie_ids, OperatorType.In)
+
+            query_graph.connect_membership(Q2result, Q2_movie_ids)
+            # For grouping and having
+            query_graph.connect_grouping(movie, movie_id3)
+            return query_graph
+            
+            Nested_with_multilevel_query._graph = query_graph
+        return TestQuery2._graph
+
+    @property
+    def nl(self):
+        return ""
+
+    @property
+    def BST_nl(self) -> str:
+        return """
+            """
+
+    @property
+    def MRP_nl(self) -> str:
+        return "Find id of movie for each id of movie where id of movie is in movie_id of Q2's results, average stars of rating in which rating belongs to movie and stars of rating is less than max_stars of Q1's results where movie_id of movie is id of those Q1's results."
 
     @property
     def TMT_nl(self) -> str:

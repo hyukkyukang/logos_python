@@ -1,6 +1,6 @@
 import unittest
 from pylogos.algorithm.MRP import MRP
-from tests.test_koutrika_et_al_2010.utils import Query, SPJ_query, GroupBy_query, Nested_with_correlation_query, Nested_with_multisublink_query, Nested_with_groupby_query, Nested_with_multilevel_query
+from tests.test_koutrika_et_al_2010.utils import Query, SPJ_query, SPJ_query2, GroupBy_query, Nested_with_correlation_query, Nested_with_multisublink_query, Nested_with_groupby_query, Nested_with_multilevel_query, TestQuery2
 
 
 class Test_MRP(unittest.TestCase):
@@ -20,6 +20,9 @@ class Test_MRP(unittest.TestCase):
     def test_spj(self):
         self._test_query(SPJ_query(), "SPJ")
 
+    def test_spj2(self):
+        self._test_query(SPJ_query2(), "SPJ2")
+
     def test_group(self):
         self._test_query(GroupBy_query(), "GroupBy")
 
@@ -34,6 +37,9 @@ class Test_MRP(unittest.TestCase):
 
     def test_nested_with_multi_levl(self):
         self._test_query(Nested_with_multilevel_query(), "multi-level-nested")
+
+    def test_query_2(self):
+        self._test_query(TestQuery2(), "TestQuery2")
 
 if __name__ == "__main__":
      unittest.main()
