@@ -6,7 +6,7 @@ from pylogos.algorithm.BST import BST
 class Test_BST(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(Test_BST, self).__init__(*args, **kwargs)
-        self.algorithm = BST()
+        # self.algorithm = BST()
 
     # def _test_query(self, query, test_name):
     #     query_graph = query.simplified_graph

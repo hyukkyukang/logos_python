@@ -5,7 +5,7 @@ from pylogos.algorithm.TMT import TMT
 class Test_TMT(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(Test_TMT, self).__init__(*args, **kwargs)
-        self.algorithm = TMT()
+        # self.algorithm = TMT()
 
     # def _test_query(self, query, test_name):
     #     query_graph = query.simplified_graph
