@@ -57,6 +57,29 @@ FunctionNames = ["Min", "Max", "Sum", "Avg", "Cnt"]
 FunctionLabels = ["minimum", "maximum", "sum of", "average", "number of"]
 
 
+aggregationNameToType = {
+    "Min": FunctionType.Min,
+    "Max": FunctionType.Max,
+    "Sum": FunctionType.Sum,
+    "Avg": FunctionType.Avg,
+    "Count": FunctionType.Count,
+}
+operatorNameToType = {
+    ">": OperatorType.GreaterThan,
+    "<": OperatorType.LessThan,
+    "=": OperatorType.Equal,
+    "!=": OperatorType.NotEqual,
+    ">=": OperatorType.GEq,
+    "<=": OperatorType.LEq,
+    "IN": OperatorType.In,
+    "NOT IN": OperatorType.NotIn,
+    "EXISTS": OperatorType.Exists,
+    "NOT EXISTS": OperatorType.NotExists,
+    "LIKE": OperatorType.Like,
+    "NOT LIKE": OperatorType.NotLike,
+}
+
+
 # Node
 class Node(metaclass=abc.ABCMeta):
     def __init__(self, node_name, entity_name, label=None):
@@ -168,10 +191,11 @@ class Predicate(Edge):
     - Selection predicate edge: if dst is a single value or a set of values
     - Join predicate edge: if dst is an attribute"""
 
-    def __init__(self, operator_id=OperatorType.Equal):
+    def __init__(self, operator_id=OperatorType.Equal, dnf_idx=0):
         super().__init__()
         self.op = operator_id
         self.label = OperatorLabels[self.op]
+        self.dnf_idx = dnf_idx
 
     def __str__(self):
         return OperatorNames[self.op]
@@ -251,6 +275,8 @@ class Query_graph(nx.DiGraph):
         self.node_name = node_name
         self._query_subjects = None
         self.reference_point_distance_threshold = rp_dist_threshold
+        self._limit = False
+        self._limit_num = None
 
     @property
     def branching_relations(self):
@@ -441,6 +467,13 @@ class Query_graph(nx.DiGraph):
             )
         )
 
+    def set_limit(self, limit_num):
+        self._limit = True
+        self._limit_num = limit_num
+
+    def get_limit(self):
+        return self._limit, self._limit_num
+
     ### Utils for graph construction
     def add_node_if_not_exist(self, node):
         if node not in self:
@@ -468,13 +501,13 @@ class Query_graph(nx.DiGraph):
         """
         self.unidirectional_connect(src_node, Selection(), dst_node)
 
-    def connect_predicate(self, src_attribute, dst_node, operator=OperatorType.Equal):
+    def connect_predicate(self, src_attribute, dst_node, operator=OperatorType.Equal, dnf_idx=0):
         """
         dst node:
             - attribute if join predicate.
             - value or a set of values if selection predicate
         """
-        self.unidirectional_connect(src_attribute, Predicate(operator), dst_node)
+        self.unidirectional_connect(src_attribute, Predicate(operator, dnf_idx), dst_node)
 
     def connect_transformation(self, src_node, dst_node):
         """NEEDCHECK: function_node to attribute or vice versa"""
@@ -489,7 +522,7 @@ class Query_graph(nx.DiGraph):
         self.unidirectional_connect(src_node, Grouping(), dst_attribute)
 
     def connect_having(self, relation, attribute):
-        self.unidirectional_connect(relation, Having(), attribute)
+        self.unidirectional_connect(relation, Having(relation, attribute), attribute)
 
     def connect_join(self, relation1, r1_attribute, r2_attribute, relation2):
         self.bidirectional_connect(relation1, Selection(), r1_attribute)
@@ -611,11 +644,7 @@ class Query_graph(nx.DiGraph):
         return src
 
     def get_edge(self, src: Node, dst: Node) -> Edge:
-        try:
-            return self.edges[src, dst]["data"]
-        except Exception as e:
-            stop = 1
-            raise e
+        return self.edges[src, dst]["data"]
 
     def has_path(self, src: Node, dst: Node) -> bool:
         return nx.has_path(self, src, dst)

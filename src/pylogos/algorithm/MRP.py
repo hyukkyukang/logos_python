@@ -61,8 +61,13 @@ class MRP:
         return len(self.order_by_nodes) > 0
 
     def __call__(self, *args, **kwargs) -> str:
-        string_builder = self._call(*args, **kwargs)
-        cStr = string_builder.construct_sentence()
+        string_builder = self._call_2(*args, **kwargs)
+
+        limit, limit_num = args[3].get_limit()
+        if limit:
+            string_builder.add_limit(limit_num)
+
+        cStr = string_builder.construct_sentence_dnf()
         cStr.add_prefix("Find ")
         # My logic
         # Add string for group by
@@ -153,15 +158,9 @@ class MRP:
                 edge_desc = self.label_edge(query_graph, src_node, dst_node)
 
                 # If the node is not the previous visited reference point, generate the full description (i.e., including predicate and etc)
-                if dst_node != previous_reference_point:
-                    reference_point_to_ground_to = (
-                        current_node if has_membership else previous_reference_point
-                    )
-                    string_builder.add(
-                        self.label_v(
-                            query_graph, reference_point_to_ground_to, dst_node
-                        )
-                    )
+                # if dst_node != previous_reference_point:
+                #    reference_point_to_ground_to = current_node if has_membership else previous_reference_point
+                #    string_builder.add(self.label_v(query_graph, reference_point_to_ground_to, dst_node))
 
                 # Add the join condition description
                 string_builder.add_join_conditions(
@@ -193,6 +192,133 @@ class MRP:
                     pop_referece_point,
                     query_graph,
                     self_path,
+                )
+            )
+
+        return string_builder
+
+    def _call_2(
+        self,
+        current_node,
+        parent_node,
+        previous_reference_point,
+        query_graph,
+        self_path=None,
+        opened=None,
+    ):
+        self_path = [] if self_path == None else self_path
+        opened = [] if opened == None else opened
+
+        def get_non_visited_outgoing_nodes(node: Node):
+            return [
+                dst
+                for dst in query_graph.get_out_going_nodes(node)
+                if dst not in self.visited_nodes
+            ]
+
+        def get_next_non_visited_relation(node: Node):
+            dst_nodes = get_non_visited_outgoing_nodes(node)
+            assert (
+                len(dst_nodes) < 2
+            ), f"there should be only one out going node, but found {len(dst_nodes)}"
+            dst_node = dst_nodes[0] if dst_nodes else None
+            # Return relation node
+            if type(dst_node) == Relation or dst_node is None:
+                return dst_node
+            return get_next_non_visited_relation(dst_node)
+
+        def pop_nodes_from_path(has_membership):
+            """Pop two nodes from the path:
+            If the current node has membership edges, we generate the description from the current node to the previous reference point
+            If the current node has no membership edges, we generate the description from the previous reference point to the current node
+            """
+            if has_membership:
+                # dst_node, src_node = self.path.pop(-1)
+                dst_node, src_node = self_path.pop(-1)
+            else:
+                # src_node, dst_node = self.path.pop(0)
+                src_node, dst_node = self_path.pop(0)
+            return (src_node, dst_node)
+
+        # Initialize the string builder
+        string_builder = StringBuilder()
+
+        # Set visited
+        self.visited_nodes.add(current_node)
+
+        # Save the traversed path
+        if parent_node:
+            assert query_graph.has_path(
+                parent_node, current_node
+            ), f"Current node {current_node} is not reachable from Parent node {parent_node}"
+            if query_graph.has_path(current_node, parent_node):
+                self_path.append([parent_node, current_node])
+            # self.path.append([parent_node, current_node])
+
+        # Construct a description for the reference point
+        if current_node in query_graph.reference_points:
+            # Check if the current node has an membership edge
+            has_membership = query_graph.has_membership_edge(current_node)
+
+            if has_membership:
+                # Create a full description for the current node
+                string_builder.add(
+                    self.label_mv(query_graph, current_node, current_node)
+                )
+
+            # Create a description for traversed path
+            while self_path:
+                # Get nodes of an edge to translate
+                src_node, dst_node = pop_nodes_from_path(has_membership)
+
+                # Get the edge description
+                if query_graph.has_edge(src_node, dst_node):
+                    edge_desc = self.label_edge(query_graph, src_node, dst_node)
+                else:
+                    edge_desc = ""
+
+                # If the node is not the previous visited reference point, generate the full description (i.e., including predicate and etc)
+                if dst_node != previous_reference_point:
+                    reference_point_to_ground_to = (
+                        current_node if has_membership else previous_reference_point
+                    )
+                    string_builder.add(
+                        self.label_v(
+                            query_graph, reference_point_to_ground_to, dst_node
+                        )
+                    )
+
+                # Add the join condition description
+                string_builder.add_join_conditions(
+                    previous_reference_point,
+                    current_node,
+                    edge_desc,
+                    dst_node,
+                    has_membership,
+                )
+
+        # State changing: New reference point
+        next_referece_point = (
+            current_node
+            if current_node in query_graph.reference_points
+            else previous_reference_point
+        )
+
+        # Propagate recursive call to next non-visited nodes
+        for dst in get_non_visited_outgoing_nodes(current_node):
+            if dst not in self.visited_nodes:
+                opened.append((dst, current_node, next_referece_point))
+
+        if len(opened) > 0:
+            pop_current_node, pop_parent_node, pop_referece_point = opened.pop(-1)
+            string_builder.add(
+                self._call_2(
+                    pop_current_node,
+                    pop_parent_node,
+                    pop_referece_point,
+                    query_graph,
+                    self_path,
+                    opened,
                 )
             )
 
@@ -314,7 +440,9 @@ class MRP:
                                 nested_string_builder = self._call(
                                     associated_relation, None, None, graph
                                 )
-                                value_str = nested_string_builder.construct_sentence()
+                                value_str = (
+                                    nested_string_builder.construct_sentence_dnf()
+                                )
                                 string_builder.add_selection(
                                     reference_point,
                                     relation,
@@ -365,7 +493,9 @@ class MRP:
                                 nested_string_builder = self._call(
                                     associated_relation, None, None, graph
                                 )
-                                value_str = nested_string_builder.construct_sentence()
+                                value_str = (
+                                    nested_string_builder.construct_sentence_dnf()
+                                )
                                 string_builder.add_selection(
                                     reference_point,
                                     associated_relation,
@@ -374,7 +504,12 @@ class MRP:
                                     value_str,
                                     None,
                                 )
-
+            elif type(out_edge_from_relation) == Order:
+                selected_node = att
+                selected_edge = out_edge_from_relation
+                assert type(selected_node) == Attribute
+                self.visited_nodes.add(selected_node)
+                string_builder.add_ordering(reference_point, relation, selected_node)
             elif type(out_edge_from_relation) == Grouping:
                 # Initialize the state for traversing all grouping attributes
                 selected_node = att

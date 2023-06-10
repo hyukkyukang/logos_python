@@ -284,6 +284,8 @@ class Limit(Edge):
 class Query_graph(nx.DiGraph):
     def __init__(self):
         super().__init__()
+        _limit = False
+        _limit_num = -1
 
     @property
     def root(self):
