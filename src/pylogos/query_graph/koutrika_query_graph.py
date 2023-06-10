@@ -504,7 +504,7 @@ class Query_graph(nx.DiGraph):
         self.unidirectional_connect(node1, Dummy_edge(), node2)
 
     def draw(self):
-        labels = {key: f"{value.name}" for key, value in nx.get_node_attributes(self, "data").items()}
+        labels = {key: f"{value.node_name}" for key, value in nx.get_node_attributes(self, "data").items()}
         node_color_list = []
         node_color_map = {
             Relation: "red",
@@ -611,7 +611,11 @@ class Query_graph(nx.DiGraph):
         return src
 
     def get_edge(self, src: Node, dst: Node) -> Edge:
-        return self.edges[src, dst]["data"]
+        try:
+            return self.edges[src, dst]["data"]
+        except Exception as e:
+            stop = 1
+            raise e
 
     def has_path(self, src: Node, dst: Node) -> bool:
         return nx.has_path(self, src, dst)

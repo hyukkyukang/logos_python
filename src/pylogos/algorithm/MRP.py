@@ -34,7 +34,6 @@ class MRP():
     """
     def __init__(self):
         self.visited_nodes = set()
-        self.path = []
         self.group_by_nodes = []
         self.order_by_nodes = []
         self.having_clause = []
@@ -82,16 +81,14 @@ class MRP():
             if type(dst_node) == Relation or dst_node is None:
                 return dst_node
             return get_next_non_visited_relation(dst_node)
-        def pop_nodes_from_path(has_membership):
+        def pop_nodes_from_path(has_membership, self_path):
             """Pop two nodes from the path:
                 If the current node has membership edges, we generate the description from the current node to the previous reference point
                 If the current node has no membership edges, we generate the description from the previous reference point to the current node
             """
             if has_membership:
-                # dst_node, src_node = self.path.pop(-1)
                 dst_node, src_node = self_path.pop(-1)
             else:
-                # src_node, dst_node = self.path.pop(0)
                 src_node, dst_node = self_path.pop(0)
             return (src_node, dst_node)
             
@@ -108,7 +105,6 @@ class MRP():
         if parent_node:
             assert query_graph.has_path(parent_node, current_node), f"Current node {current_node} is not reachable from Parent node {parent_node}"
             self_path.append([parent_node, current_node])
-            # self.path.append([parent_node, current_node])
 
         # Construct a description for the reference point
         if current_node in query_graph.reference_points:
@@ -121,9 +117,8 @@ class MRP():
 
             # Create a description for traversed path
             while self_path:
-            # while self.path:
                 # Get nodes of an edge to translate
-                src_node, dst_node = pop_nodes_from_path(has_membership)
+                src_node, dst_node = pop_nodes_from_path(has_membership, self_path)
 
                 # Get the edge description
                 edge_desc = self.label_edge(query_graph, src_node, dst_node)
